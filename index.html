@@ -519,7 +519,6 @@
         </div>
     </div>
 
-    <!-- Firebase SDK -->
     <script type="module">
         // Import Firebase modules
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
@@ -554,7 +553,6 @@
                 
                 updateConnectionStatus('connected', '🟢 已連接');
                 
-                // 載入主題列表
                 loadThemes();
                 
                 // 監聽留言變化
@@ -641,7 +639,6 @@
                     showNotification('建立主題失敗，請稍後重試', 'error');
                 }
             } else {
-                // Local mode
                 if (!allThemes.includes(theme)) {
                     allThemes.push(theme);
                     updateThemeSelector();
@@ -715,7 +712,6 @@
                         const currentLikes = message.likes || 0;
                         await updateDoc(messageRef, { likes: currentLikes + 1 });
                         
-                        // 顯示愛心動畫
                         const button = event ? event.target.closest('button') : null;
                         if (button) {
                             showLikeAnimation(button);
@@ -728,7 +724,6 @@
                     showNotification('按愛心失敗，請稍後重試', 'error');
                 }
             } else {
-                // Local mode
                 const messageIndex = messages.findIndex(msg => msg.id == messageId);
                 if (messageIndex !== -1) {
                     messages[messageIndex].likes = (messages[messageIndex].likes || 0) + 1;
@@ -758,8 +753,9 @@
 
         // Add reply to message
         window.addReply = async function(messageId) {
-            const textarea = document.querySelector(`#reply-${messageId} textarea`);
-            const authorInput = document.querySelector(`#reply-${messageId} input[type="text"]`);
+            const replyForm = document.getElementById(`reply-${messageId}`);
+            const textarea = replyForm.querySelector('textarea');
+            const authorInput = replyForm.querySelector('input[type="text"]');
             
             if (!textarea) return;
             
@@ -798,7 +794,6 @@
                     showNotification('發表回覆失敗，請稍後重試', 'error');
                 }
             } else {
-                // Local mode
                 const messageIndex = messages.findIndex(msg => msg.id == messageId);
                 if (messageIndex !== -1) {
                     if (!messages[messageIndex].replies) {
@@ -815,7 +810,7 @@
             if (authorInput) authorInput.value = '';
             
             // 隱藏回覆表單
-            document.getElementById(`reply-${messageId}`).classList.remove('active');
+            replyForm.classList.remove('active');
         };
 
         // Show like animation
@@ -852,9 +847,9 @@
             
             if (!messageText) return;
 
-            const submitBtn = document.getElementById('submitBtn');
-            submitBtn.disabled = true;
-            submitBtn.textContent = '發送中...';
+            const submitButton = document.getElementById('submitBtn');
+            submitButton.disabled = true;
+            submitButton.textContent = '發送中...';
 
             const message = {
                 author: authorName,
@@ -863,240 +858,3 @@
                 theme: currentTheme,
                 likes: 0,
                 replies: []
-            };
-
-            try {
-                if (isFirebaseConfigured) {
-                    await addDoc(collection(db, 'messages'), message);
-                    showNotification('留言發送成功！', 'success');
-                } else {
-                    // Local mode
-                    message.id = Date.now();
-                    message.timestamp = new Date();
-                    messages.unshift(message);
-                    updateDisplay();
-                    showNotification('留言已儲存（本地模式）', 'warning');
-                }
-
-                // 清空表單
-                document.getElementById('authorName').value = '';
-                document.getElementById('messageText').value = '';
-                
-            } catch (error) {
-                console.error('發送留言失敗:', error);
-                showNotification('發送失敗，請稍後重試', 'error');
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = '📝 發送留言';
-            }
-        };
-
-        // Show notification
-        function showNotification(message, type = 'info') {
-            const notification = document.createElement('div');
-            notification.className = `notification ${type}`;
-            notification.textContent = message;
-            notification.style.cssText = `
-                position: fixed;
-                top: 70px;
-                right: 20px;
-                background: ${type === 'success' ? '#4ecdc4' : type === 'warning' ? '#feca57' : '#ff6b6b'};
-                color: ${type === 'warning' ? '#333' : 'white'};
-                padding: 15px 20px;
-                border-radius: 8px;
-                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-                z-index: 1001;
-                font-weight: bold;
-                animation: slideIn 0.3s ease;
-                max-width: 300px;
-            `;
-            
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.style.animation = 'slideOut 0.3s ease';
-                setTimeout(() => {
-                    if (document.body.contains(notification)) {
-                        document.body.removeChild(notification);
-                    }
-                }, 300);
-            }, 3000);
-        }
-
-        // Update display
-        function updateDisplay() {
-            updateMessagesList();
-            updateStats();
-            document.getElementById('themeTitle').textContent = currentTheme;
-        }
-
-        // Update messages list
-        function updateMessagesList() {
-            const container = document.getElementById('messagesList');
-            
-            let themeMessages = messages.filter(msg => msg.theme === currentTheme);
-            
-            // 套用搜尋過濾
-            if (searchTerm) {
-                themeMessages = themeMessages.filter(msg => 
-                    msg.content.toLowerCase().includes(searchTerm) ||
-                    msg.author.toLowerCase().includes(searchTerm) ||
-                    msg.theme.toLowerCase().includes(searchTerm) ||
-                    (msg.replies && msg.replies.some(reply => 
-                        reply.content.toLowerCase().includes(searchTerm) ||
-                        reply.author.toLowerCase().includes(searchTerm)
-                    ))
-                );
-            }
-            
-            if (themeMessages.length === 0) {
-                const noResultsMessage = searchTerm ? 
-                    `找不到包含「${searchTerm}」的留言` : 
-                    `「${currentTheme}」主題還沒有留言，成為第一個發言的人吧！`;
-                container.innerHTML = `<div class="no-results">${noResultsMessage}</div>`;
-                return;
-            }
-
-            container.innerHTML = themeMessages.map(message => {
-                const repliesHtml = message.replies && message.replies.length > 0 ? 
-                    message.replies.map(reply => `
-                        <div class="reply-item">
-                            <div class="reply-header">
-                                <span class="reply-author">${reply.author}</span>
-                                <span class="reply-time">${formatTime(reply.timestamp instanceof Date ? reply.timestamp : reply.timestamp.toDate())}</span>
-                            </div>
-                            <div class="reply-content">${reply.content}</div>
-                        </div>
-                    `).join('') : '';
-
-                return `
-                    <div class="message-item">
-                        <div class="message-header">
-                            <span class="message-author">${message.author}</span>
-                            <span class="message-time">${formatTime(message.timestamp)}</span>
-                        </div>
-                        <div class="message-content">${message.content}</div>
-                        <div class="message-actions" style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee;">
-                            <div style="display: flex; gap: 10px;">
-                                <button class="like-btn" onclick="likeMessage('${message.id}', event)" style="
-                                    background: none;
-                                    border: none;
-                                    color: #ff6b6b;
-                                    cursor: pointer;
-                                    font-size: 1rem;
-                                    display: flex;
-                                    align-items: center;
-                                    gap: 5px;
-                                    padding: 5px 10px;
-                                    border-radius: 20px;
-                                    transition: all 0.3s ease;
-                                " onmouseover="this.style.background='#ffe6e6'" onmouseout="this.style.background='none'">
-                                    <span style="font-size: 1.2rem;">❤️</span>
-                                    <span>支持 (${message.likes || 0})</span>
-                                </button>
-                                <button onclick="toggleReply('${message.id}')" style="
-                                    background: none;
-                                    border: none;
-                                    color: #4ecdc4;
-                                    cursor: pointer;
-                                    font-size: 1rem;
-                                    display: flex;
-                                    align-items: center;
-                                    gap: 5px;
-                                    padding: 5px 10px;
-                                    border-radius: 20px;
-                                    transition: all 0.3s ease;
-                                " onmouseover="this.style.background='#e6f7f6'" onmouseout="this.style.background='none'">
-                                    <span style="font-size: 1.2rem;">💬</span>
-                                    <span>回覆${message.replies ? ` (${message.replies.length})` : ''}</span>
-                                </button>
-                            </div>
-                            <div style="color: #999; font-size: 0.8rem;">
-                                主題：${message.theme}
-                            </div>
-                        </div>
-                        
-                        ${repliesHtml}
-                        
-                        <div class="reply-form" id="reply-${message.id}">
-                            <div style="margin-bottom: 10px;">
-                                <input type="text" placeholder="您的姓名（可選）" style="
-                                    width: 100%;
-                                    padding: 8px;
-                                    border: 1px solid #ddd;
-                                    border-radius: 6px;
-                                    font-size: 0.9rem;
-                                    margin-bottom: 8px;
-                                ">
-                            </div>
-                            <textarea placeholder="輸入您的回覆..." class="reply-input"></textarea>
-                            <button onclick="addReply('${message.id}')" class="reply-btn">發表回覆</button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // Update stats
-        function updateStats() {
-            let themeMessages = messages.filter(msg => msg.theme === currentTheme);
-            
-            // 套用搜尋過濾
-            if (searchTerm) {
-                themeMessages = themeMessages.filter(msg => 
-                    msg.content.toLowerCase().includes(searchTerm) ||
-                    msg.author.toLowerCase().includes(searchTerm) ||
-                    msg.theme.toLowerCase().includes(searchTerm) ||
-                    (msg.replies && msg.replies.some(reply => 
-                        reply.content.toLowerCase().includes(searchTerm) ||
-                        reply.author.toLowerCase().includes(searchTerm)
-                    ))
-                );
-            }
-            
-            document.getElementById('totalMessages').textContent = themeMessages.length;
-            
-            const totalWords = themeMessages.reduce((sum, message) => {
-                let messageWords = message.content.length;
-                if (message.replies && message.replies.length > 0) {
-                    messageWords += message.replies.reduce((replySum, reply) => replySum + reply.content.length, 0);
-                }
-                return sum + messageWords;
-            }, 0);
-            document.getElementById('totalWords').textContent = totalWords;
-            
-            const totalLikes = themeMessages.reduce((sum, message) => {
-                return sum + (message.likes || 0);
-            }, 0);
-            document.getElementById('totalLikes').textContent = totalLikes;
-            
-            const totalReplies = themeMessages.reduce((sum, message) => {
-                return sum + (message.replies ? message.replies.length : 0);
-            }, 0);
-            document.getElementById('totalReplies').textContent = totalReplies;
-        }
-
-        // Format time
-        function formatTime(date) {
-            if (!date) return '剛剛';
-            
-            const validDate = date instanceof Date ? date : (date.toDate ? date.toDate() : new Date(date));
-            
-            return validDate.toLocaleString('zh-TW', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-        }
-
-        // Initialize on load
-        document.addEventListener('DOMContentLoaded', function() {
-            updateConnectionStatus('connecting', '🔄 連接中...');
-            initFirebase();
-        });
-    </script>
-</body>
-</html>
-            submitBtn.
