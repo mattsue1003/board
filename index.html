@@ -750,7 +750,7 @@
                 const messagesQuery = query(collection(db, 'messages'), orderBy('timestamp', 'desc'));
                 onSnapshot(messagesQuery, (snapshot) => {
                     const allMessages = [];
-                    const previousCount = messages.length;
+                    const previousCount = messages.filter(msg => msg.theme === currentTheme).length;
                     
                     snapshot.forEach((doc) => {
                         const data = doc.data();
@@ -765,12 +765,10 @@
                         });
                     });
                     
-                    // 過濾當前主題的留言
-                    messages = allMessages.filter(msg => msg.theme === currentTheme);
-                    
                     // 檢查是否有新留言（用於通知）
-                    if (allMessages.length > previousCount && previousCount > 0) {
-                        const newMessage = allMessages[0];
+                    const currentThemeMessages = allMessages.filter(msg => msg.theme === currentTheme);
+                    if (currentThemeMessages.length > previousCount && previousCount > 0) {
+                        const newMessage = currentThemeMessages[0];
                         if (notificationPermission && document.hidden) {
                             showBrowserNotification(
                                 `新留言 - ${newMessage.theme}`, 
@@ -779,6 +777,8 @@
                         }
                     }
                     
+                    // 更新全局messages但按主題過濾顯示
+                    messages = allMessages;
                     updateDisplay();
                 });
 
@@ -862,22 +862,7 @@
                 
                 if (isFirebaseConfigured) {
                     // 重新載入該主題的留言
-                    const messagesQuery = query(collection(db, 'messages'), orderBy('timestamp', 'desc'));
-                    onSnapshot(messagesQuery, (snapshot) => {
-                        const allMessages = [];
-                        snapshot.forEach((doc) => {
-                            const data = doc.data();
-                            allMessages.push({
-                                id: doc.id,
-                                ...data,
-                                timestamp: data.timestamp.toDate()
-                            });
-                        });
-                        
-                        // 過濾當前主題的留言
-                        messages = allMessages.filter(msg => msg.theme === currentTheme);
-                        updateDisplay();
-                    }, { includeMetadataChanges: false });
+                    updateDisplay();
                 } else {
                     // Local mode - filter existing messages
                     updateDisplay();
@@ -895,11 +880,17 @@
             ).join('');
         }
 
-        // Generate user ID based on name and browser
+        // Generate user ID based on name and browser (fallback for non-localStorage environments)
         function getUserId(name) {
-            const browserId = localStorage.getItem('browserId') || 
-                             'browser_' + Math.random().toString(36).substr(2, 9);
-            localStorage.setItem('browserId', browserId);
+            let browserId;
+            try {
+                browserId = localStorage.getItem('browserId') || 
+                           'browser_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('browserId', browserId);
+            } catch (e) {
+                // Fallback if localStorage is not available
+                browserId = 'browser_' + Math.random().toString(36).substr(2, 9);
+            }
             return `${name}_${browserId}`;
         }
 
@@ -1095,11 +1086,16 @@
 
         // Check if user can edit message (within 5 minutes and same user)
         function canEditMessage(message) {
-            const currentUserId = getUserId(document.getElementById('authorName').value.trim() || '匿名');
-            const timeDiff = new Date() - new Date(message.timestamp);
-            const fiveMinutes = 5 * 60 * 1000;
-            
-            return message.userId === currentUserId && timeDiff < fiveMinutes;
+            try {
+                const currentUserId = getUserId(document.getElementById('authorName').value.trim() || '匿名');
+                const timeDiff = new Date() - new Date(message.timestamp);
+                const fiveMinutes = 5 * 60 * 1000;
+                
+                return message.userId === currentUserId && timeDiff < fiveMinutes;
+            } catch (error) {
+                console.warn('無法檢查編輯權限:', error);
+                return false;
+            }
         }
         // Like message function (kept for backward compatibility)
         window.likeMessage = async function(messageId) {
@@ -1193,6 +1189,13 @@
                 } else {
                     // Local mode
                     message.id = Date.now();
+                    message.reactions = {
+                        heart: 0,
+                        thumbsUp: 0,
+                        laugh: 0,
+                        wow: 0,
+                        sad: 0
+                    };
                     messages.unshift(message);
                     updateDisplay();
                     showNotification('留言已儲存（本地模式）', 'warning');
