@@ -1,4 +1,7 @@
-<!DOCTYPE html>
+<div class="stat-card">
+                        <div class="stat-number" id="totalReplies">0</div>
+                        <div class="stat-label">總回覆數</div>
+                    </div><!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
@@ -207,57 +210,120 @@
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
         }
 
-        .viz-controls {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
 
-        .viz-btn {
-            padding: 8px 16px;
-            border: 2px solid #4ecdc4;
-            background: white;
-            color: #4ecdc4;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .viz-btn.active,
-        .viz-btn:hover {
-            background: #4ecdc4;
-            color: white;
-        }
-
-        .word-cloud {
-            min-height: 200px;
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            padding: 20px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.05);
-        }
-
-        .word {
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-weight: bold;
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        .word:hover {
-            transform: scale(1.1);
-        }
 
         .messages-container {
             grid-column: 1 / -1;
             margin-top: 20px;
+        }
+
+        .search-container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #4ecdc4;
+            box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.1);
+        }
+
+        .reply-form {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-top: 2px solid #e9ecef;
+            display: none;
+        }
+
+        .reply-form.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .reply-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            resize: vertical;
+            min-height: 60px;
+            font-size: 0.9rem;
+        }
+
+        .reply-input:focus {
+            outline: none;
+            border-color: #4ecdc4;
+        }
+
+        .reply-btn {
+            background: #4ecdc4;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .reply-btn:hover {
+            background: #45b7d1;
+            transform: translateY(-1px);
+        }
+
+        .reply-item {
+            background: #ffffff;
+            margin: 10px 0 0 30px;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 3px solid #96ceb4;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .reply-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .reply-author {
+            font-weight: bold;
+            color: #4ecdc4;
+        }
+
+        .reply-time {
+            color: #999;
+            font-size: 0.8rem;
+        }
+
+        .reply-content {
+            color: #555;
+            line-height: 1.5;
+            font-size: 0.9rem;
+        }
+
+        .no-results {
+            text-align: center;
+            color: #999;
+            padding: 40px;
+            font-style: italic;
         }
 
         .messages-list {
@@ -331,33 +397,7 @@
             margin-top: 5px;
         }
 
-        .list-view {
-            display: none;
-        }
 
-        .list-view.active {
-            display: block;
-        }
-
-        .keyword-item {
-            background: white;
-            padding: 15px;
-            margin-bottom: 10px;
-            border-radius: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-        }
-
-        .keyword-count {
-            background: #4ecdc4;
-            color: white;
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 0.9rem;
-            font-weight: bold;
-        }
 
         .setup-instructions {
             background: #fff3cd;
@@ -393,6 +433,11 @@
         @keyframes slideOut {
             from { transform: translateX(0); opacity: 1; }
             to { transform: translateX(100%); opacity: 0; }
+        }
+
+        @keyframes heartFloat {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-50px) scale(1.5); opacity: 0; }
         }
 
         @media (max-width: 768px) {
@@ -434,16 +479,8 @@
             </div>
             <div class="current-theme" id="currentTheme">目前主題：一般討論</div>
             <div style="margin-top: 15px; font-size: 0.9rem; opacity: 0.8;">
-                💬 多主題討論 • 📱 所有人都可以看到彼此的留言 • ⚡ 即時同步
+                💬 多主題討論 • 📱 本地模式 (僅此瀏覽器可見) • ⚡ 即時更新
             </div>
-        </div>
-
-        <!-- Firebase設定完成提示 -->
-        <div class="setup-instructions" id="setupInstructions" style="display: none;">
-            <h3>✅ Firebase設定完成！</h3>
-            <p><strong>恭喜！</strong>你的班級留言板已經可以多人同時使用了！</p>
-            <p>📱 將此網頁網址製作成QR碼，分享給學生掃描即可開始使用</p>
-            <p>💬 所有學生的留言都會即時同步顯示</p>
         </div>
 
         <div class="main-content">
@@ -478,114 +515,44 @@
                         <div class="stat-label">總愛心數</div>
                     </div>
                 </div>
+                
+                <div style="margin-top: 20px; padding: 15px; background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                    <h4 style="color: #4ecdc4; margin-bottom: 10px; font-size: 1.1rem;">💡 使用提示</h4>
+                    <ul style="color: #666; font-size: 0.9rem; line-height: 1.6; margin-left: 20px;">
+                        <li>點擊留言下方的 ❤️ 支持按鈕表達認同</li>
+                        <li>使用 💬 回覆功能與其他人深入討論</li>
+                        <li>善用搜尋功能快速找到相關留言</li>
+                        <li>可建立不同主題進行分類討論</li>
+                    </ul>
+                </div>
             </div>
         </div>
 
         <div class="messages-container">
+            <div class="search-container">
+                <h3 style="margin-bottom: 15px; color: #333;">🔍 搜尋留言</h3>
+                <input type="text" id="searchInput" class="search-input" placeholder="輸入關鍵字搜尋留言內容、作者或主題..." onkeyup="searchMessages()">
+            </div>
+            
             <div class="messages-list">
                 <h3>💭 「<span id="themeTitle">一般討論</span>」主題留言</h3>
                 <div id="messagesList">
-                    <p style="color: #999; text-align: center; padding: 40px;">正在載入留言...</p>
+                    <p style="color: #999; text-align: center; padding: 40px;">目前還沒有留言，成為第一個發言的人吧！</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Firebase SDK -->
-    <script type="module">
-        // Import Firebase modules
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-
-        // Firebase configuration - 你的Firebase設定
-        const firebaseConfig = {
-            apiKey: "AIzaSyCC-hrQzsFHNI20omQOxVtckJzdmJV_7Fo",
-            authDomain: "matt-e0d2a.firebaseapp.com",
-            projectId: "matt-e0d2a",
-            storageBucket: "matt-e0d2a.firebasestorage.app",
-            messagingSenderId: "913370952002",
-            appId: "1:913370952002:web:f650c216eddc4da01218db"
-        };
-
+    <script>
         // Global variables
         let messages = [];
         let allThemes = ['一般討論'];
         let currentTheme = '一般討論';
-        let db;
-        let app;
-        let isFirebaseConfigured = false;
+        let searchTerm = '';
 
-        // Check if Firebase is properly configured
-        function checkFirebaseConfig() {
-            return firebaseConfig.apiKey !== "your-api-key-here" && 
-                   firebaseConfig.projectId !== "your-project-id";
-        }
-
-        // Initialize Firebase
-        function initFirebase() {
-            try {
-                if (!checkFirebaseConfig()) {
-                    console.log('Firebase未設定，使用本地模式');
-                    updateConnectionStatus('error', '⚠️ 需要Firebase設定');
-                    document.getElementById('setupInstructions').style.display = 'block';
-                    initLocalMode();
-                    return;
-                }
-
-                app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                isFirebaseConfigured = true;
-                
-                // 隱藏設定說明
-                document.getElementById('setupInstructions').style.display = 'none';
-                
-                updateConnectionStatus('connected', '🟢 已連接');
-                
-                // 載入主題列表
-                loadThemes();
-                
-                // 監聽留言變化（依主題過濾）
-                const messagesQuery = query(collection(db, 'messages'), orderBy('timestamp', 'desc'));
-                onSnapshot(messagesQuery, (snapshot) => {
-                    const allMessages = [];
-                    snapshot.forEach((doc) => {
-                        const data = doc.data();
-                        allMessages.push({
-                            id: doc.id,
-                            ...data,
-                            timestamp: data.timestamp.toDate(),
-                            likes: data.likes || 0 // 確保愛心數存在
-                        });
-                    });
-                    
-                    // 過濾當前主題的留言
-                    messages = allMessages.filter(msg => msg.theme === currentTheme);
-                    updateDisplay();
-                });
-
-                // 監聽主題列表變化
-                onSnapshot(collection(db, 'themes'), (snapshot) => {
-                    const themes = ['一般討論'];
-                    snapshot.forEach((doc) => {
-                        const theme = doc.data().name;
-                        if (!themes.includes(theme)) {
-                            themes.push(theme);
-                        }
-                    });
-                    allThemes = themes;
-                    updateThemeSelector();
-                });
-
-            } catch (error) {
-                console.error('Firebase初始化失敗:', error);
-                updateConnectionStatus('error', '❌ 連接失敗');
-                initLocalMode();
-            }
-        }
-
-        // Local mode fallback
+        // Initialize local mode
         function initLocalMode() {
-            isFirebaseConfigured = false;
+            updateConnectionStatus('error', '📱 本地模式');
             updateDisplay();
             showNotification('目前使用本地模式，留言僅在此瀏覽器中顯示', 'warning');
         }
@@ -598,7 +565,7 @@
         }
 
         // Create new theme
-        window.createTheme = async function() {
+        window.createTheme = function() {
             const input = document.getElementById('themeInput');
             const theme = input.value.trim();
             if (!theme) return;
@@ -609,27 +576,10 @@
                 return;
             }
 
-            if (isFirebaseConfigured) {
-                try {
-                    await addDoc(collection(db, 'themes'), { 
-                        name: theme, 
-                        createdAt: new Date() 
-                    });
-                    showNotification('主題建立成功！', 'success');
-                    input.value = '';
-                } catch (error) {
-                    console.error('建立主題失敗:', error);
-                    showNotification('建立主題失敗，請稍後重試', 'error');
-                }
-            } else {
-                // Local mode
-                if (!allThemes.includes(theme)) {
-                    allThemes.push(theme);
-                    updateThemeSelector();
-                    showNotification('主題已建立（本地模式）', 'warning');
-                }
-                input.value = '';
-            }
+            allThemes.push(theme);
+            updateThemeSelector();
+            showNotification('主題已建立（本地模式）', 'success');
+            input.value = '';
         };
 
         // Switch theme
@@ -640,29 +590,7 @@
             if (newTheme !== currentTheme) {
                 currentTheme = newTheme;
                 document.getElementById('currentTheme').textContent = `目前主題：${currentTheme}`;
-                
-                if (isFirebaseConfigured) {
-                    // 重新載入該主題的留言
-                    const messagesQuery = query(collection(db, 'messages'), orderBy('timestamp', 'desc'));
-                    onSnapshot(messagesQuery, (snapshot) => {
-                        const allMessages = [];
-                        snapshot.forEach((doc) => {
-                            const data = doc.data();
-                            allMessages.push({
-                                id: doc.id,
-                                ...data,
-                                timestamp: data.timestamp.toDate()
-                            });
-                        });
-                        
-                        // 過濾當前主題的留言
-                        messages = allMessages.filter(msg => msg.theme === currentTheme);
-                        updateDisplay();
-                    }, { includeMetadataChanges: false });
-                } else {
-                    // Local mode - filter existing messages
-                    updateDisplay();
-                }
+                updateDisplay();
             }
         };
 
@@ -676,32 +604,85 @@
             ).join('');
         }
 
-        // Like message function
-        window.likeMessage = async function(messageId) {
-            if (isFirebaseConfigured) {
-                try {
-                    const messageRef = doc(db, 'messages', messageId);
-                    const messageDoc = await getDoc(messageRef);
-                    
-                    if (messageDoc.exists()) {
-                        const currentLikes = messageDoc.data().likes || 0;
-                        await setDoc(messageRef, { likes: currentLikes + 1 }, { merge: true });
-                        
-                        // 顯示愛心動畫
-                        showLikeAnimation(event.target);
-                    }
-                } catch (error) {
-                    console.error('按愛心失敗:', error);
-                    showNotification('按愛心失敗，請稍後重試', 'error');
+        // Search messages
+        window.searchMessages = function() {
+            searchTerm = document.getElementById('searchInput').value.trim().toLowerCase();
+            updateDisplay();
+        };
+
+        // Like message function (修正版本)
+        window.likeMessage = function(messageId, event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            const messageIndex = messages.findIndex(msg => msg.id == messageId);
+            if (messageIndex !== -1) {
+                messages[messageIndex].likes = (messages[messageIndex].likes || 0) + 1;
+                updateDisplay();
+                
+                // 顯示愛心動畫
+                const button = event ? event.target.closest('button') : null;
+                if (button) {
+                    showLikeAnimation(button);
                 }
-            } else {
-                // Local mode
-                const messageIndex = messages.findIndex(msg => msg.id == messageId);
-                if (messageIndex !== -1) {
-                    messages[messageIndex].likes = (messages[messageIndex].likes || 0) + 1;
-                    updateDisplay();
-                    showLikeAnimation(event.target);
+                
+                showNotification('已按讚！', 'success');
+            }
+        };
+
+        // Toggle reply form
+        window.toggleReply = function(messageId) {
+            const replyForm = document.getElementById(`reply-${messageId}`);
+            if (replyForm) {
+                replyForm.classList.toggle('active');
+                if (replyForm.classList.contains('active')) {
+                    const textarea = replyForm.querySelector('textarea');
+                    if (textarea) textarea.focus();
                 }
+            }
+        };
+
+        // Add reply to message
+        window.addReply = function(messageId) {
+            const textarea = document.querySelector(`#reply-${messageId} textarea`);
+            const authorInput = document.querySelector(`#reply-${messageId} input[type="text"]`);
+            
+            if (!textarea) return;
+            
+            const replyContent = textarea.value.trim();
+            const replyAuthor = authorInput ? authorInput.value.trim() || '匿名' : '匿名';
+            
+            if (!replyContent) {
+                showNotification('請輸入回覆內容', 'warning');
+                return;
+            }
+
+            const messageIndex = messages.findIndex(msg => msg.id == messageId);
+            if (messageIndex !== -1) {
+                if (!messages[messageIndex].replies) {
+                    messages[messageIndex].replies = [];
+                }
+                
+                const reply = {
+                    id: Date.now(),
+                    author: replyAuthor,
+                    content: replyContent,
+                    timestamp: new Date()
+                };
+                
+                messages[messageIndex].replies.push(reply);
+                
+                // 清空回覆表單
+                textarea.value = '';
+                if (authorInput) authorInput.value = '';
+                
+                // 隱藏回覆表單
+                document.getElementById(`reply-${messageId}`).classList.remove('active');
+                
+                updateDisplay();
+                showNotification('回覆已發表！', 'success');
             }
         };
 
@@ -729,29 +710,9 @@
                 }
             }, 1000);
         }
-        // Load themes
-        async function loadThemes() {
-            if (!isFirebaseConfigured) return;
-            
-            try {
-                onSnapshot(collection(db, 'themes'), (snapshot) => {
-                    const themes = ['一般討論'];
-                    snapshot.forEach((doc) => {
-                        const theme = doc.data().name;
-                        if (!themes.includes(theme)) {
-                            themes.push(theme);
-                        }
-                    });
-                    allThemes = themes;
-                    updateThemeSelector();
-                });
-            } catch (error) {
-                console.error('載入主題列表失敗:', error);
-            }
-        }
 
         // Add message
-        window.addMessage = async function(event) {
+        window.addMessage = function(event) {
             event.preventDefault();
             
             const authorName = document.getElementById('authorName').value.trim() || '匿名';
@@ -764,37 +725,24 @@
             submitBtn.textContent = '發送中...';
 
             const message = {
+                id: Date.now(),
                 author: authorName,
                 content: messageText,
                 timestamp: new Date(),
                 theme: currentTheme,
-                likes: 0 // 初始化愛心數
+                likes: 0
             };
 
-            try {
-                if (isFirebaseConfigured) {
-                    await addDoc(collection(db, 'messages'), message);
-                    showNotification('留言發送成功！', 'success');
-                } else {
-                    // Local mode
-                    message.id = Date.now();
-                    message.likes = 0; // 初始化愛心數
-                    messages.unshift(message);
-                    updateDisplay();
-                    showNotification('留言已儲存（本地模式）', 'warning');
-                }
+            messages.unshift(message);
+            updateDisplay();
+            showNotification('留言已儲存（本地模式）', 'success');
 
-                // 清空表單
-                document.getElementById('authorName').value = '';
-                document.getElementById('messageText').value = '';
-                
-            } catch (error) {
-                console.error('發送留言失敗:', error);
-                showNotification('發送失敗，請稍後重試', 'error');
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = '📝 發送留言';
-            }
+            // 清空表單
+            document.getElementById('authorName').value = '';
+            document.getElementById('messageText').value = '';
+            
+            submitBtn.disabled = false;
+            submitBtn.textContent = '📝 發送留言';
         };
 
         // Show notification
@@ -833,61 +781,141 @@
         function updateDisplay() {
             updateMessagesList();
             updateStats();
-            // 更新留言區標題
             document.getElementById('themeTitle').textContent = currentTheme;
         }
 
-        // Update messages list (filtered by current theme)
+        // Update messages list (filtered by current theme and search)
         function updateMessagesList() {
             const container = document.getElementById('messagesList');
             
-            // 過濾當前主題的留言
-            const themeMessages = messages.filter(msg => msg.theme === currentTheme);
+            let themeMessages = messages.filter(msg => msg.theme === currentTheme);
+            
+            // 套用搜尋過濾
+            if (searchTerm) {
+                themeMessages = themeMessages.filter(msg => 
+                    msg.content.toLowerCase().includes(searchTerm) ||
+                    msg.author.toLowerCase().includes(searchTerm) ||
+                    msg.theme.toLowerCase().includes(searchTerm) ||
+                    (msg.replies && msg.replies.some(reply => 
+                        reply.content.toLowerCase().includes(searchTerm) ||
+                        reply.author.toLowerCase().includes(searchTerm)
+                    ))
+                );
+            }
             
             if (themeMessages.length === 0) {
-                container.innerHTML = `<p style="color: #999; text-align: center; padding: 40px;">「${currentTheme}」主題還沒有留言</p>`;
+                const noResultsMessage = searchTerm ? 
+                    `找不到包含「${searchTerm}」的留言` : 
+                    `「${currentTheme}」主題還沒有留言，成為第一個發言的人吧！`;
+                container.innerHTML = `<div class="no-results">${noResultsMessage}</div>`;
                 return;
             }
 
-            container.innerHTML = themeMessages.map(message => `
-                <div class="message-item">
-                    <div class="message-header">
-                        <span class="message-author">${message.author}</span>
-                        <span class="message-time">${formatTime(message.timestamp)}</span>
-                    </div>
-                    <div class="message-content">${message.content}</div>
-                    <div class="message-actions" style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee;">
-                        <button class="like-btn" onclick="likeMessage('${message.id}')" style="
-                            background: none;
-                            border: none;
-                            color: #ff6b6b;
-                            cursor: pointer;
-                            font-size: 1rem;
-                            display: flex;
-                            align-items: center;
-                            gap: 5px;
-                            padding: 5px 10px;
-                            border-radius: 20px;
-                            transition: all 0.3s ease;
-                        " onmouseover="this.style.background='#ffe6e6'" onmouseout="this.style.background='none'">
-                            <span style="font-size: 1.2rem;">❤️</span>
-                            <span>支持 (${message.likes || 0})</span>
-                        </button>
-                        <div style="color: #999; font-size: 0.8rem;">
-                            主題：${message.theme}
+            container.innerHTML = themeMessages.map(message => {
+                const repliesHtml = message.replies && message.replies.length > 0 ? 
+                    message.replies.map(reply => `
+                        <div class="reply-item">
+                            <div class="reply-header">
+                                <span class="reply-author">${reply.author}</span>
+                                <span class="reply-time">${formatTime(reply.timestamp)}</span>
+                            </div>
+                            <div class="reply-content">${reply.content}</div>
+                        </div>
+                    `).join('') : '';
+
+                return `
+                    <div class="message-item">
+                        <div class="message-header">
+                            <span class="message-author">${message.author}</span>
+                            <span class="message-time">${formatTime(message.timestamp)}</span>
+                        </div>
+                        <div class="message-content">${message.content}</div>
+                        <div class="message-actions" style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee;">
+                            <div style="display: flex; gap: 10px;">
+                                <button class="like-btn" onclick="likeMessage('${message.id}', event)" style="
+                                    background: none;
+                                    border: none;
+                                    color: #ff6b6b;
+                                    cursor: pointer;
+                                    font-size: 1rem;
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 5px;
+                                    padding: 5px 10px;
+                                    border-radius: 20px;
+                                    transition: all 0.3s ease;
+                                " onmouseover="this.style.background='#ffe6e6'" onmouseout="this.style.background='none'">
+                                    <span style="font-size: 1.2rem;">❤️</span>
+                                    <span>支持 (${message.likes || 0})</span>
+                                </button>
+                                <button onclick="toggleReply('${message.id}')" style="
+                                    background: none;
+                                    border: none;
+                                    color: #4ecdc4;
+                                    cursor: pointer;
+                                    font-size: 1rem;
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 5px;
+                                    padding: 5px 10px;
+                                    border-radius: 20px;
+                                    transition: all 0.3s ease;
+                                " onmouseover="this.style.background='#e6f7f6'" onmouseout="this.style.background='none'">
+                                    <span style="font-size: 1.2rem;">💬</span>
+                                    <span>回覆${message.replies ? ` (${message.replies.length})` : ''}</span>
+                                </button>
+                            </div>
+                            <div style="color: #999; font-size: 0.8rem;">
+                                主題：${message.theme}
+                            </div>
+                        </div>
+                        
+                        ${repliesHtml}
+                        
+                        <div class="reply-form" id="reply-${message.id}">
+                            <div style="margin-bottom: 10px;">
+                                <input type="text" placeholder="您的姓名（可選）" style="
+                                    width: 100%;
+                                    padding: 8px;
+                                    border: 1px solid #ddd;
+                                    border-radius: 6px;
+                                    font-size: 0.9rem;
+                                    margin-bottom: 8px;
+                                ">
+                            </div>
+                            <textarea placeholder="輸入您的回覆..." class="reply-input"></textarea>
+                            <button onclick="addReply('${message.id}')" class="reply-btn">發表回覆</button>
                         </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
-        // Update stats (filtered by current theme)
+        // Update stats (filtered by current theme and search)
         function updateStats() {
-            const themeMessages = messages.filter(msg => msg.theme === currentTheme);
+            let themeMessages = messages.filter(msg => msg.theme === currentTheme);
+            
+            // 套用搜尋過濾
+            if (searchTerm) {
+                themeMessages = themeMessages.filter(msg => 
+                    msg.content.toLowerCase().includes(searchTerm) ||
+                    msg.author.toLowerCase().includes(searchTerm) ||
+                    msg.theme.toLowerCase().includes(searchTerm) ||
+                    (msg.replies && msg.replies.some(reply => 
+                        reply.content.toLowerCase().includes(searchTerm) ||
+                        reply.author.toLowerCase().includes(searchTerm)
+                    ))
+                );
+            }
+            
             document.getElementById('totalMessages').textContent = themeMessages.length;
             
             const totalWords = themeMessages.reduce((sum, message) => {
-                return sum + message.content.length;
+                let messageWords = message.content.length;
+                if (message.replies && message.replies.length > 0) {
+                    messageWords += message.replies.reduce((replySum, reply) => replySum + reply.content.length, 0);
+                }
+                return sum + messageWords;
             }, 0);
             document.getElementById('totalWords').textContent = totalWords;
             
@@ -895,219 +923,14 @@
                 return sum + (message.likes || 0);
             }, 0);
             document.getElementById('totalLikes').textContent = totalLikes;
+            
+            const totalReplies = themeMessages.reduce((sum, message) => {
+                return sum + (message.replies ? message.replies.length : 0);
+            }, 0);
+            document.getElementById('totalReplies').textContent = totalReplies;
         }
 
-        // Update visualization
-        function updateVisualization() {
-            const isWordCloudActive = document.querySelector('.viz-btn.active').textContent === '文字雲';
-            
-            if (isWordCloudActive) {
-                generateWordCloud();
-            } else {
-                generateKeywordList();
-            }
-        }
 
-        // Show word cloud
-        window.showWordCloud = function() {
-            document.querySelectorAll('.viz-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.viz-btn')[0].classList.add('active');
-            
-            document.getElementById('wordCloud').style.display = 'flex';
-            document.getElementById('listView').classList.remove('active');
-            
-            generateWordCloud();
-        };
-
-        // Show list view
-        window.showListView = function() {
-            document.querySelectorAll('.viz-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.viz-btn')[1].classList.add('active');
-            
-            document.getElementById('wordCloud').style.display = 'none';
-            document.getElementById('listView').classList.add('active');
-            
-            generateKeywordList();
-        };
-
-        // Generate word cloud (only meaningful terms)
-        function generateWordCloud() {
-            const container = document.getElementById('wordCloud');
-            
-            // 過濾當前主題的留言
-            const themeMessages = messages.filter(msg => msg.theme === currentTheme);
-            
-            if (themeMessages.length === 0) {
-                container.innerHTML = `<p style="color: #999;">「${currentTheme}」主題還沒有留言，快來發表第一則留言吧！</p>`;
-                return;
-            }
-
-            const keywords = extractKeywords();
-            const keywordEntries = Object.entries(keywords);
-            
-            if (keywordEntries.length === 0) {
-                container.innerHTML = `<p style="color: #999;">還沒有發現有意義的關鍵詞<br><small>試試發表包含專業術語或具體內容的留言</small></p>`;
-                return;
-            }
-
-            const colors = [
-                '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', 
-                '#feca57', '#ff9ff3', '#54a0ff', '#5f27cd',
-                '#00d2d3', '#1dd1a1', '#fd79a8', '#fdcb6e'
-            ];
-            
-            // 只顯示前8個最重要的關鍵字
-            container.innerHTML = keywordEntries
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 8)
-                .map(([word, count], index) => {
-                    // 字體大小根據詞彙重要性調整
-                    const baseSize = 1.2;
-                    const sizeBoost = count > 1 ? 0.4 : 0;
-                    const size = baseSize + sizeBoost;
-                    
-                    const color = colors[index % colors.length];
-                    
-                    return `<span class="word" style="
-                        font-size: ${size}rem; 
-                        background: linear-gradient(45deg, ${color}, ${color}dd); 
-                        color: white;
-                        margin: 8px;
-                        padding: 10px 16px;
-                        display: inline-block;
-                        border-radius: 25px;
-                        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-                        font-weight: 600;
-                        transition: transform 0.3s ease;
-                    " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">${word} <small style="opacity: 0.9; font-size: 0.75em;">${count}</small></span>`;
-                }).join('');
-        }
-
-        // Generate keyword list (only meaningful terms)
-        function generateKeywordList() {
-            const container = document.getElementById('keywordList');
-            const keywords = extractKeywords();
-            
-            if (Object.keys(keywords).length === 0) {
-                container.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">還沒有發現有意義的關鍵詞<br><small style="font-size: 0.8rem;">試試發表包含專業術語或具體內容的留言</small></p>';
-                return;
-            }
-
-            const sortedKeywords = Object.entries(keywords)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 10); // 限制顯示數量
-            
-            let html = '<div style="margin-bottom: 15px;"><h4 style="color: #4ecdc4; margin-bottom: 10px; font-size: 1rem;">發現的關鍵詞彙</h4>';
-            
-            sortedKeywords.forEach(([word, count]) => {
-                const importance = count >= 3 ? 'high' : count >= 2 ? 'medium' : 'low';
-                const bgColor = count >= 3 ? '#ff6b6b' : count >= 2 ? '#feca57' : '#96ceb4';
-                
-                html += `
-                    <div class="keyword-item" style="margin-bottom: 8px; border-left: 4px solid ${bgColor};">
-                        <span style="font-weight: ${count >= 2 ? 'bold' : 'normal'};">${word}</span>
-                        <span class="keyword-count" style="background: ${bgColor};">${count}</span>
-                    </div>
-                `;
-            });
-            
-            html += '</div>';
-            container.innerHTML = html;
-        }
-
-        // Extract keywords (completely redesigned for meaningful content only)
-        function extractKeywords() {
-            const keywords = {};
-            // 只分析當前主題的留言
-            const themeMessages = messages.filter(m => m.theme === currentTheme);
-            
-            if (themeMessages.length === 0) return keywords;
-            
-            const allText = themeMessages.map(m => m.content).join(' ');
-            
-            // 第一步：提取預定義的有意義詞彙
-            const meaningfulTerms = [
-                // 職能治療專業詞彙
-                '職能治療師', '職能治療', '物理治療', '語言治療', '心理治療',
-                '復健科', '復健治療', '復健', '評估', '訓練', '治療', '療育', '諮詢',
-                
-                // 功能與技能
-                '認知功能', '認知訓練', '認知', '感覺統合', '感覺', '動作訓練', '動作',
-                '精細動作', '粗大動作', '手眼協調', '平衡', '肌力', '肌耐力',
-                '日常生活', '生活自理', '自理能力', '獨立性', '功能性',
-                
-                // 輔具與環境
-                '輔具評估', '輔具', '無障礙', '環境改造', '適應', '協助', '支持',
-                
-                // 對象群體
-                '發展遲緩', '自閉症', '注意力不足', '過動症', '學習障礙',
-                '中風', '腦傷', '脊髓損傷', '帕金森氏症', '失智症', '憂鬱症',
-                '兒童', '青少年', '成人', '老人', '長者', '患者', '個案', '案主',
-                '家屬', '照顧者', '家庭', '父母',
-                
-                // 場所與機構
-                '醫院', '診所', '復健科', '早療中心', '日照中心', '學校', '特教班',
-                '社區', '居家', '機構',
-                
-                // 專業概念
-                '評估工具', '介入', '計畫', '目標', '策略', '方法', '技巧',
-                '進步', '改善', '維持', '預防', '促進', '發展',
-                '困難', '問題', '挑戰', '障礙', '限制',
-                '成功', '效果', '成果', '經驗', '學習',
-                
-                // 情感與交流
-                '分享', '討論', '交流', '溝通', '意見', '建議', '想法', '心得',
-                '感謝', '支持', '鼓勵', '理解', '同理',
-                
-                // 常見形容詞
-                '重要', '有效', '有用', '困難', '容易', '複雜', '簡單',
-                '專業', '創新', '實用', '合適', '適當'
-            ];
-            
-            // 檢查每個預定義詞彙是否出現在文本中
-            meaningfulTerms.forEach(term => {
-                const regex = new RegExp(term, 'gi');
-                const matches = allText.match(regex);
-                if (matches && matches.length > 0) {
-                    keywords[term] = matches.length;
-                }
-            });
-            
-            // 第二步：如果關鍵字太少，提取動詞和名詞（排除無意義的片段）
-            if (Object.keys(keywords).length < 3) {
-                // 定義一些常見的動詞和名詞模式
-                const verbNounPatterns = [
-                    /需要/g, /想要/g, /希望/g, /喜歡/g, /認為/g, /覺得/g, /發現/g,
-                    /使用/g, /運用/g, /操作/g, /練習/g, /訓練/g, /學習/g, /教導/g,
-                    /幫助/g, /協助/g, /改善/g, /提升/g, /增進/g, /促進/g, /維持/g,
-                    /解決/g, /處理/g, /面對/g, /克服/g, /達成/g, /完成/g,
-                    /健康/g, /安全/g, /舒適/g, /便利/g, /效率/g, /品質/g,
-                    /工作/g, /活動/g, /課程/g, /計畫/g, /服務/g, /資源/g
-                ];
-                
-                verbNounPatterns.forEach(pattern => {
-                    const matches = allText.match(pattern);
-                    if (matches && matches.length > 0) {
-                        const word = matches[0];
-                        keywords[word] = matches.length;
-                    }
-                });
-            }
-            
-            // 第三步：過濾掉無意義的短詞和人稱代詞
-            const meaninglessWords = ['今天', '昨天', '明天', '現在', '之前', '之後', '這個', '那個', '什麼', '怎麼', '為什麼', '可以', '不能', '沒有', '還是', '或是', '如果', '因為', '所以', '但是', '然後', '我', '你', '他', '她', '我們', '你們', '他們', '的話', '一下', '一些', '很多', '非常', '真的', '就是', '這樣', '那樣'];
-            
-            const filteredKeywords = {};
-            Object.entries(keywords).forEach(([word, count]) => {
-                if (!meaninglessWords.includes(word) && 
-                    word.length >= 2 && 
-                    count >= 1) {
-                    filteredKeywords[word] = count;
-                }
-            });
-            
-            return filteredKeywords;
-        }
 
         // Format time
         function formatTime(date) {
@@ -1122,8 +945,10 @@
 
         // Initialize on load
         document.addEventListener('DOMContentLoaded', function() {
-            updateConnectionStatus('connecting', '🔄 連接中...');
-            initFirebase();
+            updateConnectionStatus('connecting', '🔄 初始化中...');
+            setTimeout(() => {
+                initLocalMode();
+            }, 1000);
         });
     </script>
 </body>
