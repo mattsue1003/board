@@ -207,6 +207,49 @@
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
         }
 
+        .search-container {
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #4ecdc4;
+            box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.1);
+        }
+
+        .sort-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .sort-btn {
+            padding: 8px 16px;
+            border: 2px solid #4ecdc4;
+            background: white;
+            color: #4ecdc4;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .sort-btn.active,
+        .sort-btn:hover {
+            background: #4ecdc4;
+            color: white;
+        }
+
         .viz-controls {
             display: flex;
             gap: 10px;
@@ -276,11 +319,147 @@
             border-left: 4px solid #4ecdc4;
             transition: all 0.3s ease;
             animation: fadeIn 0.5s ease;
+            position: relative;
         }
 
         .message-item:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .message-main {
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .message-content-wrapper {
+            flex: 1;
+        }
+
+        .message-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+        }
+
+        .reaction-buttons {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .reaction-btn {
+            background: none;
+            border: none;
+            padding: 5px 8px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .reaction-btn:hover {
+            background: #f0f0f0;
+            transform: scale(1.1);
+        }
+
+        .reaction-btn.active {
+            background: #ffe6e6;
+        }
+
+        .edit-form {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 3px solid #feca57;
+        }
+
+        .edit-textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            resize: vertical;
+            min-height: 60px;
+            font-family: inherit;
+        }
+
+        .edit-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-save {
+            background: #4ecdc4;
+            color: white;
+        }
+
+        .btn-cancel {
+            background: #ddd;
+            color: #666;
+        }
+
+        .btn-edit {
+            background: #feca57;
+            color: white;
+            font-size: 0.8rem;
+            padding: 4px 8px;
+        }
+
+        .notification-permission {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            color: #856404;
+            display: none;
+        }
+
+        .permission-btn {
+            background: #4ecdc4;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-left: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .permission-btn:hover {
+            background: #45a29e;
         }
 
         .message-header {
@@ -463,7 +642,25 @@
             </div>
 
             <div class="visualization">
-                <h3>📊 留言分析</h3>
+                <h3>📊 討論統計</h3>
+                
+                <!-- 通知權限請求 -->
+                <div class="notification-permission" id="notificationPermission">
+                    🔔 開啟瀏覽器通知，即時接收新留言提醒！
+                    <button class="permission-btn" onclick="requestNotificationPermission()">開啟通知</button>
+                </div>
+                
+                <!-- 搜尋功能 -->
+                <div class="search-container">
+                    <input type="text" class="search-input" id="searchInput" placeholder="🔍 搜尋留言內容..." onkeyup="searchMessages()">
+                </div>
+                
+                <!-- 排序控制 -->
+                <div class="sort-controls">
+                    <button class="sort-btn active" onclick="setSortMode('time')">⏰ 時間排序</button>
+                    <button class="sort-btn" onclick="setSortMode('likes')">❤️ 熱門排序</button>
+                </div>
+                
                 <div class="stats">
                     <div class="stat-card">
                         <div class="stat-number" id="totalMessages">0</div>
@@ -477,19 +674,6 @@
                         <div class="stat-number" id="totalLikes">0</div>
                         <div class="stat-label">總愛心數</div>
                     </div>
-                </div>
-                
-                <div class="viz-controls">
-                    <button class="viz-btn active" onclick="showWordCloud()">文字雲</button>
-                    <button class="viz-btn" onclick="showListView()">關鍵字列表</button>
-                </div>
-                
-                <div id="wordCloud" class="word-cloud">
-                    <p style="color: #999;">還沒有留言，快來發表第一則留言吧！</p>
-                </div>
-                
-                <div id="listView" class="list-view">
-                    <div id="keywordList"></div>
                 </div>
             </div>
         </div>
@@ -524,9 +708,14 @@
         let messages = [];
         let allThemes = ['一般討論'];
         let currentTheme = '一般討論';
+        let sortMode = 'time'; // 'time' or 'likes'
+        let searchQuery = '';
+        let userColors = new Map(); // 儲存用戶顏色
+        let userIds = new Map(); // 儲存用戶ID（用於編輯權限）
         let db;
         let app;
         let isFirebaseConfigured = false;
+        let notificationPermission = false;
 
         // Check if Firebase is properly configured
         function checkFirebaseConfig() {
@@ -561,18 +750,35 @@
                 const messagesQuery = query(collection(db, 'messages'), orderBy('timestamp', 'desc'));
                 onSnapshot(messagesQuery, (snapshot) => {
                     const allMessages = [];
+                    const previousCount = messages.length;
+                    
                     snapshot.forEach((doc) => {
                         const data = doc.data();
                         allMessages.push({
                             id: doc.id,
                             ...data,
                             timestamp: data.timestamp.toDate(),
-                            likes: data.likes || 0 // 確保愛心數存在
+                            likes: data.likes || 0,
+                            reactions: data.reactions || {},
+                            userId: data.userId || '',
+                            editedAt: data.editedAt ? data.editedAt.toDate() : null
                         });
                     });
                     
                     // 過濾當前主題的留言
                     messages = allMessages.filter(msg => msg.theme === currentTheme);
+                    
+                    // 檢查是否有新留言（用於通知）
+                    if (allMessages.length > previousCount && previousCount > 0) {
+                        const newMessage = allMessages[0];
+                        if (notificationPermission && document.hidden) {
+                            showBrowserNotification(
+                                `新留言 - ${newMessage.theme}`, 
+                                `${newMessage.author}: ${newMessage.content.substring(0, 50)}...`
+                            );
+                        }
+                    }
+                    
                     updateDisplay();
                 });
 
@@ -689,33 +895,215 @@
             ).join('');
         }
 
-        // Like message function
-        window.likeMessage = async function(messageId) {
+        // Generate user ID based on name and browser
+        function getUserId(name) {
+            const browserId = localStorage.getItem('browserId') || 
+                             'browser_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('browserId', browserId);
+            return `${name}_${browserId}`;
+        }
+
+        // Generate avatar for user
+        function generateAvatar(name) {
+            const colors = [
+                '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', 
+                '#ff9ff3', '#54a0ff', '#5f27cd', '#00d2d3', '#1dd1a1',
+                '#fd79a8', '#fdcb6e', '#6c5ce7', '#a29bfe', '#fd79a8'
+            ];
+            
+            // 為相同名字分配相同顏色
+            if (!userColors.has(name)) {
+                const colorIndex = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                userColors.set(name, colors[colorIndex % colors.length]);
+            }
+            
+            const color = userColors.get(name);
+            const initial = name === '匿名' ? '？' : name.charAt(0).toUpperCase();
+            
+            return { color, initial };
+        }
+
+        // Request notification permission
+        window.requestNotificationPermission = function() {
+            if ('Notification' in window) {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        notificationPermission = true;
+                        document.getElementById('notificationPermission').style.display = 'none';
+                        showNotification('通知已開啟！', 'success');
+                    }
+                });
+            }
+        };
+
+        // Show browser notification
+        function showBrowserNotification(title, body) {
+            if (notificationPermission && 'Notification' in window && document.hidden) {
+                new Notification(title, {
+                    body: body,
+                    icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="%234ecdc4"/><text x="50" y="60" font-size="40" text-anchor="middle" fill="white">💬</text></svg>'
+                });
+            }
+        }
+
+        // Search messages
+        window.searchMessages = function() {
+            searchQuery = document.getElementById('searchInput').value.toLowerCase();
+            updateDisplay();
+        };
+
+        // Set sort mode
+        window.setSortMode = function(mode) {
+            sortMode = mode;
+            
+            // Update active button
+            document.querySelectorAll('.sort-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            updateDisplay();
+        };
+
+        // React to message
+        window.reactToMessage = async function(messageId, reactionType) {
             if (isFirebaseConfigured) {
                 try {
                     const messageRef = doc(db, 'messages', messageId);
                     const messageDoc = await getDoc(messageRef);
                     
                     if (messageDoc.exists()) {
-                        const currentLikes = messageDoc.data().likes || 0;
-                        await setDoc(messageRef, { likes: currentLikes + 1 }, { merge: true });
+                        const data = messageDoc.data();
+                        const reactions = data.reactions || {};
+                        reactions[reactionType] = (reactions[reactionType] || 0) + 1;
                         
-                        // 顯示愛心動畫
-                        showLikeAnimation(event.target);
+                        await setDoc(messageRef, { reactions }, { merge: true });
+                        showReactionAnimation(event.target, reactionType);
                     }
                 } catch (error) {
-                    console.error('按愛心失敗:', error);
-                    showNotification('按愛心失敗，請稍後重試', 'error');
+                    console.error('反應失敗:', error);
                 }
             } else {
                 // Local mode
                 const messageIndex = messages.findIndex(msg => msg.id == messageId);
                 if (messageIndex !== -1) {
-                    messages[messageIndex].likes = (messages[messageIndex].likes || 0) + 1;
+                    if (!messages[messageIndex].reactions) {
+                        messages[messageIndex].reactions = {};
+                    }
+                    messages[messageIndex].reactions[reactionType] = 
+                        (messages[messageIndex].reactions[reactionType] || 0) + 1;
                     updateDisplay();
-                    showLikeAnimation(event.target);
+                    showReactionAnimation(event.target, reactionType);
                 }
             }
+        };
+
+        // Show reaction animation
+        function showReactionAnimation(button, reactionType) {
+            const reactions = {
+                heart: '❤️',
+                thumbsUp: '👍',
+                laugh: '😂',
+                wow: '😮',
+                sad: '😢'
+            };
+            
+            const emoji = document.createElement('div');
+            emoji.innerHTML = reactions[reactionType];
+            emoji.style.cssText = `
+                position: absolute;
+                pointer-events: none;
+                font-size: 1.5rem;
+                animation: reactionFloat 1s ease-out forwards;
+                z-index: 1000;
+            `;
+            
+            const rect = button.getBoundingClientRect();
+            emoji.style.left = rect.left + 'px';
+            emoji.style.top = rect.top + 'px';
+            
+            document.body.appendChild(emoji);
+            
+            setTimeout(() => {
+                if (document.body.contains(emoji)) {
+                    document.body.removeChild(emoji);
+                }
+            }, 1000);
+        }
+
+        // Edit message
+        window.editMessage = function(messageId) {
+            const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+            const contentElement = messageElement.querySelector('.message-content');
+            const currentContent = contentElement.textContent;
+            
+            const editForm = document.createElement('div');
+            editForm.className = 'edit-form';
+            editForm.innerHTML = `
+                <div style="color: #856404; font-size: 0.9rem; margin-bottom: 8px;">✏️ 編輯留言（發布後5分鐘內可編輯）</div>
+                <textarea class="edit-textarea" id="editTextarea_${messageId}">${currentContent}</textarea>
+                <div class="edit-buttons">
+                    <button class="btn-small btn-save" onclick="saveEdit('${messageId}')">保存</button>
+                    <button class="btn-small btn-cancel" onclick="cancelEdit('${messageId}')">取消</button>
+                </div>
+            `;
+            
+            contentElement.style.display = 'none';
+            contentElement.parentNode.insertBefore(editForm, contentElement.nextSibling);
+        };
+
+        // Save edit
+        window.saveEdit = async function(messageId) {
+            const newContent = document.getElementById(`editTextarea_${messageId}`).value.trim();
+            if (!newContent) return;
+            
+            if (isFirebaseConfigured) {
+                try {
+                    const messageRef = doc(db, 'messages', messageId);
+                    await setDoc(messageRef, { 
+                        content: newContent,
+                        editedAt: new Date()
+                    }, { merge: true });
+                    showNotification('留言編輯成功！', 'success');
+                } catch (error) {
+                    console.error('編輯失敗:', error);
+                    showNotification('編輯失敗，請稍後重試', 'error');
+                }
+            } else {
+                // Local mode
+                const messageIndex = messages.findIndex(msg => msg.id == messageId);
+                if (messageIndex !== -1) {
+                    messages[messageIndex].content = newContent;
+                    messages[messageIndex].editedAt = new Date();
+                    updateDisplay();
+                    showNotification('留言編輯成功！', 'success');
+                }
+            }
+            
+            cancelEdit(messageId);
+        };
+
+        // Cancel edit
+        window.cancelEdit = function(messageId) {
+            const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+            const editForm = messageElement.querySelector('.edit-form');
+            const contentElement = messageElement.querySelector('.message-content');
+            
+            if (editForm) {
+                editForm.remove();
+                contentElement.style.display = 'block';
+            }
+        };
+
+        // Check if user can edit message (within 5 minutes and same user)
+        function canEditMessage(message) {
+            const currentUserId = getUserId(document.getElementById('authorName').value.trim() || '匿名');
+            const timeDiff = new Date() - new Date(message.timestamp);
+            const fiveMinutes = 5 * 60 * 1000;
+            
+            return message.userId === currentUserId && timeDiff < fiveMinutes;
+        }
+        // Like message function (kept for backward compatibility)
+        window.likeMessage = async function(messageId) {
+            await reactToMessage(messageId, 'heart');
         };
 
         // Show like animation
@@ -781,17 +1169,30 @@
                 content: messageText,
                 timestamp: new Date(),
                 theme: currentTheme,
-                likes: 0 // 初始化愛心數
+                likes: 0,
+                reactions: {
+                    heart: 0,
+                    thumbsUp: 0,
+                    laugh: 0,
+                    wow: 0,
+                    sad: 0
+                },
+                userId: getUserId(authorName), // 用於編輯權限
+                editedAt: null
             };
 
             try {
                 if (isFirebaseConfigured) {
                     await addDoc(collection(db, 'messages'), message);
                     showNotification('留言發送成功！', 'success');
+                    
+                    // 發送瀏覽器通知
+                    if (notificationPermission) {
+                        showBrowserNotification('新留言', `${authorName}: ${messageText.substring(0, 50)}...`);
+                    }
                 } else {
                     // Local mode
                     message.id = Date.now();
-                    message.likes = 0; // 初始化愛心數
                     messages.unshift(message);
                     updateDisplay();
                     showNotification('留言已儲存（本地模式）', 'warning');
@@ -846,48 +1247,95 @@
         function updateDisplay() {
             updateMessagesList();
             updateStats();
-            updateVisualization();
             // 更新留言區標題
             document.getElementById('themeTitle').textContent = currentTheme;
         }
 
-        // Update messages list (filtered by current theme)
+        // Update messages list (with search, sort, avatars, and edit functionality)
         function updateMessagesList() {
             const container = document.getElementById('messagesList');
             
             // 過濾當前主題的留言
-            const themeMessages = messages.filter(msg => msg.theme === currentTheme);
+            let themeMessages = messages.filter(msg => msg.theme === currentTheme);
+            
+            // 搜尋過濾
+            if (searchQuery) {
+                themeMessages = themeMessages.filter(msg => 
+                    msg.content.toLowerCase().includes(searchQuery) ||
+                    msg.author.toLowerCase().includes(searchQuery)
+                );
+            }
+            
+            // 排序
+            if (sortMode === 'likes') {
+                themeMessages.sort((a, b) => {
+                    const aTotal = (a.likes || 0) + Object.values(a.reactions || {}).reduce((sum, val) => sum + val, 0);
+                    const bTotal = (b.likes || 0) + Object.values(b.reactions || {}).reduce((sum, val) => sum + val, 0);
+                    return bTotal - aTotal;
+                });
+            } else {
+                themeMessages.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            }
             
             if (themeMessages.length === 0) {
-                container.innerHTML = `<p style="color: #999; text-align: center; padding: 40px;">「${currentTheme}」主題還沒有留言</p>`;
+                container.innerHTML = searchQuery ? 
+                    `<p style="color: #999; text-align: center; padding: 40px;">沒有找到包含「${searchQuery}」的留言</p>` :
+                    `<p style="color: #999; text-align: center; padding: 40px;">「${currentTheme}」主題還沒有留言</p>`;
                 return;
             }
 
-            container.innerHTML = themeMessages.map(message => `
-                <div class="message-item">
-                    <div class="message-header">
-                        <span class="message-author">${message.author}</span>
-                        <span class="message-time">${formatTime(message.timestamp)}</span>
+            container.innerHTML = themeMessages.map(message => {
+                const avatar = generateAvatar(message.author);
+                const canEdit = canEditMessage(message);
+                const reactions = message.reactions || {};
+                const totalReactions = Object.values(reactions).reduce((sum, val) => sum + val, 0);
+                
+                return `
+                    <div class="message-item" data-message-id="${message.id}">
+                        <div class="message-main">
+                            <div class="message-avatar" style="background-color: ${avatar.color};">
+                                ${avatar.initial}
+                            </div>
+                            <div class="message-content-wrapper">
+                                <div class="message-header">
+                                    <span class="message-author">${message.author}</span>
+                                    <span class="message-time">
+                                        ${formatTime(message.timestamp)}
+                                        ${message.editedAt ? '<small style="color: #999;"> (已編輯)</small>' : ''}
+                                    </span>
+                                </div>
+                                <div class="message-content">${message.content}</div>
+                                <div class="message-actions">
+                                    <div class="reaction-buttons">
+                                        <button class="reaction-btn" onclick="reactToMessage('${message.id}', 'heart')" title="愛心">
+                                            ❤️ <small>${reactions.heart || 0}</small>
+                                        </button>
+                                        <button class="reaction-btn" onclick="reactToMessage('${message.id}', 'thumbsUp')" title="讚">
+                                            👍 <small>${reactions.thumbsUp || 0}</small>
+                                        </button>
+                                        <button class="reaction-btn" onclick="reactToMessage('${message.id}', 'laugh')" title="哈哈">
+                                            😂 <small>${reactions.laugh || 0}</small>
+                                        </button>
+                                        <button class="reaction-btn" onclick="reactToMessage('${message.id}', 'wow')" title="哇">
+                                            😮 <small>${reactions.wow || 0}</small>
+                                        </button>
+                                        <button class="reaction-btn" onclick="reactToMessage('${message.id}', 'sad')" title="難過">
+                                            😢 <small>${reactions.sad || 0}</small>
+                                        </button>
+                                        ${canEdit ? `<button class="btn-small btn-edit" onclick="editMessage('${message.id}')" title="編輯">✏️</button>` : ''}
+                                    </div>
+                                    <div style="color: #999; font-size: 0.8rem; display: flex; align-items: center; gap: 10px;">
+                                        <span>主題：${message.theme}</span>
+                                        ${totalReactions > 0 ? `<span>總反應：${totalReactions}</span>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="message-content">${message.content}</div>
-                    <div class="message-actions" style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee;">
-                        <button class="like-btn" onclick="likeMessage('${message.id}')" style="
-                            background: none;
-                            border: none;
-                            color: #ff6b6b;
-                            cursor: pointer;
-                            font-size: 1rem;
-                            display: flex;
-                            align-items: center;
-                            gap: 5px;
-                            padding: 5px 10px;
-                            border-radius: 20px;
-                            transition: all 0.3s ease;
-                        " onmouseover="this.style.background='#ffe6e6'" onmouseout="this.style.background='none'">
-                            <span style="font-size: 1.2rem;">❤️</span>
-                            <span>支持 (${message.likes || 0})</span>
-                        </button>
-                        <div style="color: #999; font-size: 0.8rem;">
+                `;
+            }).join('');
+        };">
+                            <div style="color: #999; font-size: 0.8rem;">
                             主題：${message.theme}
                         </div>
                     </div>
@@ -906,7 +1354,8 @@
             document.getElementById('totalWords').textContent = totalWords;
             
             const totalLikes = themeMessages.reduce((sum, message) => {
-                return sum + (message.likes || 0);
+                const reactionCount = Object.values(message.reactions || {}).reduce((rSum, val) => rSum + val, 0);
+                return sum + (message.likes || 0) + reactionCount;
             }, 0);
             document.getElementById('totalLikes').textContent = totalLikes;
         }
@@ -1138,6 +1587,15 @@
         document.addEventListener('DOMContentLoaded', function() {
             updateConnectionStatus('connecting', '🔄 連接中...');
             initFirebase();
+            
+            // Check notification permission
+            if ('Notification' in window) {
+                if (Notification.permission === 'granted') {
+                    notificationPermission = true;
+                } else if (Notification.permission !== 'denied') {
+                    document.getElementById('notificationPermission').style.display = 'block';
+                }
+            }
         });
     </script>
 </body>
