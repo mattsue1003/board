@@ -619,10 +619,11 @@
 
         <!-- Firebase設定完成提示 -->
         <div class="setup-instructions" id="setupInstructions" style="display: none;">
-            <h3>✅ Firebase設定完成！</h3>
-            <p><strong>恭喜！</strong>你的班級留言板已經可以多人同時使用了！</p>
-            <p>📱 將此網頁網址製作成QR碼，分享給學生掃描即可開始使用</p>
-            <p>💬 所有學生的留言都會即時同步顯示</p>
+            <h3>🔧 Firebase設定說明</h3>
+            <p><strong>步驟1：</strong> 前往 <a href="https://console.firebase.google.com" target="_blank">Firebase Console</a></p>
+            <p><strong>步驟2：</strong> 確認 Firestore Database 已啟用（測試模式）</p>
+            <p><strong>步驟3：</strong> 檢查網路連線和防火牆設定</p>
+            <p><strong>如果問題持續，請檢查瀏覽器控制台的錯誤訊息</strong></p>
         </div>
 
         <div class="main-content">
@@ -692,7 +693,7 @@
     <script type="module">
         // Import Firebase modules
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, setDoc, getDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
         // Firebase configuration - 你的Firebase設定
         const firebaseConfig = {
@@ -726,6 +727,8 @@
         // Initialize Firebase
         function initFirebase() {
             try {
+                console.log('開始初始化Firebase...');
+                
                 if (!checkFirebaseConfig()) {
                     console.log('Firebase未設定，使用本地模式');
                     updateConnectionStatus('error', '⚠️ 需要Firebase設定');
@@ -734,71 +737,139 @@
                     return;
                 }
 
+                console.log('Firebase配置檢查通過，開始連接...');
                 app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 isFirebaseConfigured = true;
+                
+                console.log('Firebase初始化成功');
                 
                 // 隱藏設定說明
                 document.getElementById('setupInstructions').style.display = 'none';
                 
                 updateConnectionStatus('connected', '🟢 已連接');
                 
+                // 測試Firebase連接
+                testFirebaseConnection();
+                
                 // 載入主題列表
                 loadThemes();
                 
-                // 監聽留言變化（依主題過濾）
-                const messagesQuery = query(collection(db, 'messages'), orderBy('timestamp', 'desc'));
-                onSnapshot(messagesQuery, (snapshot) => {
-                    const allMessages = [];
-                    const previousCount = messages.filter(msg => msg.theme === currentTheme).length;
-                    
-                    snapshot.forEach((doc) => {
-                        const data = doc.data();
-                        allMessages.push({
-                            id: doc.id,
-                            ...data,
-                            timestamp: data.timestamp.toDate(),
-                            likes: data.likes || 0,
-                            reactions: data.reactions || {},
-                            userId: data.userId || '',
-                            editedAt: data.editedAt ? data.editedAt.toDate() : null
-                        });
-                    });
-                    
-                    // 檢查是否有新留言（用於通知）
-                    const currentThemeMessages = allMessages.filter(msg => msg.theme === currentTheme);
-                    if (currentThemeMessages.length > previousCount && previousCount > 0) {
-                        const newMessage = currentThemeMessages[0];
-                        if (notificationPermission && document.hidden) {
-                            showBrowserNotification(
-                                `新留言 - ${newMessage.theme}`, 
-                                `${newMessage.author}: ${newMessage.content.substring(0, 50)}...`
-                            );
-                        }
-                    }
-                    
-                    // 更新全局messages但按主題過濾顯示
-                    messages = allMessages;
-                    updateDisplay();
-                });
+                // 監聽留言變化
+                setupMessageListener();
 
                 // 監聽主題列表變化
-                onSnapshot(collection(db, 'themes'), (snapshot) => {
-                    const themes = ['一般討論'];
-                    snapshot.forEach((doc) => {
-                        const theme = doc.data().name;
-                        if (!themes.includes(theme)) {
-                            themes.push(theme);
-                        }
-                    });
-                    allThemes = themes;
-                    updateThemeSelector();
-                });
+                setupThemeListener();
 
             } catch (error) {
                 console.error('Firebase初始化失敗:', error);
                 updateConnectionStatus('error', '❌ 連接失敗');
+                showNotification('Firebase連接失敗: ' + error.message, 'error');
                 initLocalMode();
+            }
+        }
+
+        // Test Firebase connection
+        async function testFirebaseConnection() {
+            try {
+                console.log('測試Firebase連接...');
+                // 嘗試讀取一個測試文檔
+                const testQuery = query(collection(db, 'messages'), orderBy('timestamp', 'desc'));
+                await new Promise((resolve, reject) => {
+                    const unsubscribe = onSnapshot(testQuery, 
+                        (snapshot) => {
+                            console.log('Firebase連接測試成功，找到', snapshot.size, '個留言');
+                            unsubscribe();
+                            resolve();
+                        },
+                        (error) => {
+                            console.error('Firebase連接測試失敗:', error);
+                            reject(error);
+                        }
+                    );
+                });
+                showNotification('Firebase連接成功！', 'success');
+            } catch (error) {
+                console.error('Firebase連接測試失敗:', error);
+                updateConnectionStatus('error', '❌ 連接測試失敗');
+                showNotification('Firebase連接測試失敗: ' + error.message, 'error');
+            }
+        }
+
+        // Setup message listener
+        function setupMessageListener() {
+            try {
+                console.log('設定留言監聽器...');
+                const messagesQuery = query(collection(db, 'messages'), orderBy('timestamp', 'desc'));
+                onSnapshot(messagesQuery, 
+                    (snapshot) => {
+                        console.log('收到留言更新，共', snapshot.size, '則留言');
+                        const allMessages = [];
+                        const previousCount = messages.filter(msg => msg.theme === currentTheme).length;
+                        
+                        snapshot.forEach((doc) => {
+                            const data = doc.data();
+                            allMessages.push({
+                                id: doc.id,
+                                ...data,
+                                timestamp: data.timestamp ? data.timestamp.toDate() : new Date(),
+                                likes: data.likes || 0,
+                                reactions: data.reactions || {},
+                                userId: data.userId || '',
+                                editedAt: data.editedAt ? data.editedAt.toDate() : null
+                            });
+                        });
+                        
+                        // 檢查是否有新留言（用於通知）
+                        const currentThemeMessages = allMessages.filter(msg => msg.theme === currentTheme);
+                        if (currentThemeMessages.length > previousCount && previousCount > 0) {
+                            const newMessage = currentThemeMessages[0];
+                            if (notificationPermission && document.hidden) {
+                                showBrowserNotification(
+                                    `新留言 - ${newMessage.theme}`, 
+                                    `${newMessage.author}: ${newMessage.content.substring(0, 50)}...`
+                                );
+                            }
+                        }
+                        
+                        // 更新全局messages
+                        messages = allMessages;
+                        updateDisplay();
+                    },
+                    (error) => {
+                        console.error('留言監聽器錯誤:', error);
+                        updateConnectionStatus('error', '❌ 同步失敗');
+                        showNotification('留言同步失敗: ' + error.message, 'error');
+                    }
+                );
+            } catch (error) {
+                console.error('設定留言監聽器失敗:', error);
+            }
+        }
+
+        // Setup theme listener
+        function setupThemeListener() {
+            try {
+                console.log('設定主題監聽器...');
+                onSnapshot(collection(db, 'themes'), 
+                    (snapshot) => {
+                        console.log('收到主題更新');
+                        const themes = ['一般討論'];
+                        snapshot.forEach((doc) => {
+                            const theme = doc.data().name;
+                            if (!themes.includes(theme)) {
+                                themes.push(theme);
+                            }
+                        });
+                        allThemes = themes;
+                        updateThemeSelector();
+                    },
+                    (error) => {
+                        console.error('主題監聽器錯誤:', error);
+                    }
+                );
+            } catch (error) {
+                console.error('設定主題監聽器失敗:', error);
             }
         }
 
@@ -958,6 +1029,7 @@
         window.reactToMessage = async function(messageId, reactionType) {
             if (isFirebaseConfigured) {
                 try {
+                    console.log('正在添加反應:', reactionType);
                     const messageRef = doc(db, 'messages', messageId);
                     const messageDoc = await getDoc(messageRef);
                     
@@ -966,11 +1038,12 @@
                         const reactions = data.reactions || {};
                         reactions[reactionType] = (reactions[reactionType] || 0) + 1;
                         
-                        await setDoc(messageRef, { reactions }, { merge: true });
+                        await updateDoc(messageRef, { reactions });
                         showReactionAnimation(event.target, reactionType);
                     }
                 } catch (error) {
                     console.error('反應失敗:', error);
+                    showNotification('反應失敗: ' + error.message, 'error');
                 }
             } else {
                 // Local mode
@@ -1048,15 +1121,16 @@
             
             if (isFirebaseConfigured) {
                 try {
+                    console.log('正在保存編輯...');
                     const messageRef = doc(db, 'messages', messageId);
-                    await setDoc(messageRef, { 
+                    await updateDoc(messageRef, { 
                         content: newContent,
                         editedAt: new Date()
-                    }, { merge: true });
+                    });
                     showNotification('留言編輯成功！', 'success');
                 } catch (error) {
                     console.error('編輯失敗:', error);
-                    showNotification('編輯失敗，請稍後重試', 'error');
+                    showNotification('編輯失敗: ' + error.message, 'error');
                 }
             } else {
                 // Local mode
