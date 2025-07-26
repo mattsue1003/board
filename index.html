@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>班級留言板</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            padding: 30px;
+            text-align: center;
+            color: white;
+            position: relative;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="dots" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="2" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23dots)"/></svg>');
+            pointer-events: none;
+        }
+
+        .header > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .theme-input {
+            margin: 20px 0;
+        }
+
+        .theme-input input {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            width: 300px;
+            max-width: 90%;
+            text-align: center;
+        }
+
+        .theme-input button {
+            padding: 10px 20px;
+            background: #fff;
+            color: #ff6b6b;
+            border: none;
+            border-radius: 25px;
+            font-weight: bold;
+            margin-left: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .theme-input button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .current-theme {
+            font-size: 1.2rem;
+            margin-top: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 15px;
+            display: inline-block;
+        }
+
+        .connection-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        .status-connected {
+            background: #4ecdc4;
+            color: white;
+        }
+
+        .status-connecting {
+            background: #feca57;
+            color: #333;
+        }
+
+        .status-error {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 30px;
+        }
+
+        .message-form {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .message-form h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: bold;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #4ecdc4;
+            box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .submit-btn {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .visualization {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .viz-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .viz-btn {
+            padding: 8px 16px;
+            border: 2px solid #4ecdc4;
+            background: white;
+            color: #4ecdc4;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .viz-btn.active,
+        .viz-btn:hover {
+            background: #4ecdc4;
+            color: white;
+        }
+
+        .word-cloud {
+            min-height: 200px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .word {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .word:hover {
+            transform: scale(1.1);
+        }
+
+        .messages-container {
+            grid-column: 1 / -1;
+            margin-top: 20px;
+        }
+
+        .messages-list {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .message-item {
+            background: white;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 12px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+            border-left: 4px solid #4ecdc4;
+            transition: all 0.3s ease;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .message-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        }
+
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .message-author {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .message-time {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .message-content {
+            color: #444;
+            line-height: 1.6;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #4ecdc4;
+        }
+
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .list-view {
+            display: none;
+        }
+
+        .list-view.active {
+            display: block;
+        }
+
+        .keyword-item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .keyword-count {
+            background: #4ecdc4;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        .setup-instructions {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px;
+            color: #856404;
+        }
+
+        .setup-instructions h3 {
+            color: #856404;
+            margin-bottom: 15px;
+        }
+
+        .setup-instructions code {
+            background: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .theme-input input {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+            
+            .theme-input button {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="connection-status" id="connectionStatus">🔄 連接中...</div>
+    
+    <div class="container">
+        <div class="header">
+            <h1>💬 班級留言板</h1>
+            <p style="margin: 10px 0; font-size: 1.1rem; opacity: 0.9;">歡迎同學們自由發表想法與交流！</p>
+            <div class="theme-input">
+                <input type="text" id="themeInput" placeholder="設定討論主題..." maxlength="50">
+                <button onclick="setTheme()">設定主題</button>
+            </div>
+            <div class="current-theme" id="currentTheme">主題：一般討論</div>
+            <div style="margin-top: 15px; font-size: 0.9rem; opacity: 0.8;">
+                📱 所有同學都可以看到彼此的留言 • 💬 即時同步
+            </div>
+        </div>
+
+        <!-- Firebase設定完成提示 -->
+        <div class="setup-instructions" id="setupInstructions" style="display: none;">
+            <h3>✅ Firebase設定完成！</h3>
+            <p><strong>恭喜！</strong>你的班級留言板已經可以多人同時使用了！</p>
+            <p>📱 將此網頁網址製作成QR碼，分享給學生掃描即可開始使用</p>
+            <p>💬 所有學生的留言都會即時同步顯示</p>
+        </div>
+
+        <div class="main-content">
+            <div class="message-form">
+                <h3>✍️ 發表留言</h3>
+                <form onsubmit="addMessage(event)">
+                    <div class="form-group">
+                        <label for="authorName">姓名（可選）：</label>
+                        <input type="text" id="authorName" placeholder="匿名" maxlength="20">
+                    </div>
+                    <div class="form-group">
+                        <label for="messageText">留言內容：</label>
+                        <textarea id="messageText" placeholder="請輸入您的留言..." required maxlength="500"></textarea>
+                    </div>
+                    <button type="submit" class="submit-btn" id="submitBtn">📝 發送留言</button>
+                </form>
+            </div>
+
+            <div class="visualization">
+                <h3>📊 留言分析</h3>
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalMessages">0</div>
+                        <div class="stat-label">總留言數</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalWords">0</div>
+                        <div class="stat-label">總字數</div>
+                    </div>
+                </div>
+                
+                <div class="viz-controls">
+                    <button class="viz-btn active" onclick="showWordCloud()">文字雲</button>
+                    <button class="viz-btn" onclick="showListView()">關鍵字列表</button>
+                </div>
+                
+                <div id="wordCloud" class="word-cloud">
+                    <p style="color: #999;">還沒有留言，快來發表第一則留言吧！</p>
+                </div>
+                
+                <div id="listView" class="list-view">
+                    <div id="keywordList"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="messages-container">
+            <div class="messages-list">
+                <h3>💭 所有留言</h3>
+                <div id="messagesList">
+                    <p style="color: #999; text-align: center; padding: 40px;">正在載入留言...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // Firebase configuration - 你的Firebase設定
+        const firebaseConfig = {
+            apiKey: "AIzaSyCC-hrQzsFHNI20omQOxVtckJzdmJV_7Fo",
+            authDomain: "matt-e0d2a.firebaseapp.com",
+            projectId: "matt-e0d2a",
+            storageBucket: "matt-e0d2a.firebasestorage.app",
+            messagingSenderId: "913370952002",
+            appId: "1:913370952002:web:f650c216eddc4da01218db"
+        };
+
+        // Global variables
+        let messages = [];
+        let currentTheme = '一般討論';
+        let db;
+        let app;
+        let isFirebaseConfigured = false;
+
+        // Check if Firebase is properly configured
+        function checkFirebaseConfig() {
+            return firebaseConfig.apiKey !== "your-api-key-here" && 
+                   firebaseConfig.projectId !== "your-project-id";
+        }
+
+        // Initialize Firebase
+        function initFirebase() {
+            try {
+                if (!checkFirebaseConfig()) {
+                    console.log('Firebase未設定，使用本地模式');
+                    updateConnectionStatus('error', '⚠️ 需要Firebase設定');
+                    document.getElementById('setupInstructions').style.display = 'block';
+                    initLocalMode();
+                    return;
+                }
+
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                isFirebaseConfigured = true;
+                
+                // 隱藏設定說明
+                document.getElementById('setupInstructions').style.display = 'none';
+                
+                updateConnectionStatus('connected', '🟢 已連接');
+                
+                // 載入主題
+                loadTheme();
+                
+                // 監聽留言變化
+                const messagesQuery = query(collection(db, 'messages'), orderBy('timestamp', 'desc'));
+                onSnapshot(messagesQuery, (snapshot) => {
+                    messages = [];
+                    snapshot.forEach((doc) => {
+                        const data = doc.data();
+                        messages.push({
+                            id: doc.id,
+                            ...data,
+                            timestamp: data.timestamp.toDate()
+                        });
+                    });
+                    updateDisplay();
+                });
+
+                // 監聽主題變化
+                onSnapshot(doc(db, 'settings', 'theme'), (doc) => {
+                    if (doc.exists()) {
+                        const newTheme = doc.data().value;
+                        if (newTheme !== currentTheme) {
+                            currentTheme = newTheme;
+                            document.getElementById('currentTheme').textContent = `主題：${currentTheme}`;
+                        }
+                    }
+                });
+
+            } catch (error) {
+                console.error('Firebase初始化失敗:', error);
+                updateConnectionStatus('error', '❌ 連接失敗');
+                initLocalMode();
+            }
+        }
+
+        // Local mode fallback
+        function initLocalMode() {
+            isFirebaseConfigured = false;
+            updateDisplay();
+            showNotification('目前使用本地模式，留言僅在此瀏覽器中顯示', 'warning');
+        }
+
+        // Update connection status
+        function updateConnectionStatus(status, text) {
+            const statusEl = document.getElementById('connectionStatus');
+            statusEl.textContent = text;
+            statusEl.className = `connection-status status-${status}`;
+        }
+
+        // Set theme
+        window.setTheme = async function() {
+            const input = document.getElementById('themeInput');
+            const theme = input.value.trim();
+            if (!theme) return;
+
+            currentTheme = theme;
+            document.getElementById('currentTheme').textContent = `主題：${theme}`;
+            input.value = '';
+
+            if (isFirebaseConfigured) {
+                try {
+                    await setDoc(doc(db, 'settings', 'theme'), { value: theme });
+                    showNotification('主題設定成功！', 'success');
+                } catch (error) {
+                    console.error('設定主題失敗:', error);
+                    showNotification('設定主題失敗，請稍後重試', 'error');
+                }
+            }
+        };
+
+        // Load theme
+        async function loadTheme() {
+            if (!isFirebaseConfigured) return;
+            
+            try {
+                const themeDoc = await getDoc(doc(db, 'settings', 'theme'));
+                if (themeDoc.exists()) {
+                    currentTheme = themeDoc.data().value;
+                    document.getElementById('currentTheme').textContent = `主題：${currentTheme}`;
+                }
+            } catch (error) {
+                console.error('載入主題失敗:', error);
+            }
+        }
+
+        // Add message
+        window.addMessage = async function(event) {
+            event.preventDefault();
+            
+            const authorName = document.getElementById('authorName').value.trim() || '匿名';
+            const messageText = document.getElementById('messageText').value.trim();
+            
+            if (!messageText) return;
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = '發送中...';
+
+            const message = {
+                author: authorName,
+                content: messageText,
+                timestamp: new Date(),
+                theme: currentTheme
+            };
+
+            try {
+                if (isFirebaseConfigured) {
+                    await addDoc(collection(db, 'messages'), message);
+                    showNotification('留言發送成功！', 'success');
+                } else {
+                    // Local mode
+                    message.id = Date.now();
+                    messages.unshift(message);
+                    updateDisplay();
+                    showNotification('留言已儲存（本地模式）', 'warning');
+                }
+
+                // 清空表單
+                document.getElementById('authorName').value = '';
+                document.getElementById('messageText').value = '';
+                
+            } catch (error) {
+                console.error('發送留言失敗:', error);
+                showNotification('發送失敗，請稍後重試', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '📝 發送留言';
+            }
+        };
+
+        // Show notification
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 70px;
+                right: 20px;
+                background: ${type === 'success' ? '#4ecdc4' : type === 'warning' ? '#feca57' : '#ff6b6b'};
+                color: ${type === 'warning' ? '#333' : 'white'};
+                padding: 15px 20px;
+                border-radius: 8px;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+                z-index: 1001;
+                font-weight: bold;
+                animation: slideIn 0.3s ease;
+                max-width: 300px;
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => {
+                    if (document.body.contains(notification)) {
+                        document.body.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
+        // Update display
+        function updateDisplay() {
+            updateMessagesList();
+            updateStats();
+            updateVisualization();
+        }
+
+        // Update messages list
+        function updateMessagesList() {
+            const container = document.getElementById('messagesList');
+            
+            if (messages.length === 0) {
+                container.innerHTML = '<p style="color: #999; text-align: center; padding: 40px;">目前還沒有留言</p>';
+                return;
+            }
+
+            container.innerHTML = messages.map(message => `
+                <div class="message-item">
+                    <div class="message-header">
+                        <span class="message-author">${message.author}</span>
+                        <span class="message-time">${formatTime(message.timestamp)}</span>
+                    </div>
+                    <div class="message-content">${message.content}</div>
+                </div>
+            `).join('');
+        }
+
+        // Update stats
+        function updateStats() {
+            document.getElementById('totalMessages').textContent = messages.length;
+            
+            const totalWords = messages.reduce((sum, message) => {
+                return sum + message.content.length;
+            }, 0);
+            document.getElementById('totalWords').textContent = totalWords;
+        }
+
+        // Update visualization
+        function updateVisualization() {
+            const isWordCloudActive = document.querySelector('.viz-btn.active').textContent === '文字雲';
+            
+            if (isWordCloudActive) {
+                generateWordCloud();
+            } else {
+                generateKeywordList();
+            }
+        }
+
+        // Show word cloud
+        window.showWordCloud = function() {
+            document.querySelectorAll('.viz-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.viz-btn')[0].classList.add('active');
+            
+            document.getElementById('wordCloud').style.display = 'flex';
+            document.getElementById('listView').classList.remove('active');
+            
+            generateWordCloud();
+        };
+
+        // Show list view
+        window.showListView = function() {
+            document.querySelectorAll('.viz-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.viz-btn')[1].classList.add('active');
+            
+            document.getElementById('wordCloud').style.display = 'none';
+            document.getElementById('listView').classList.add('active');
+            
+            generateKeywordList();
+        };
+
+        // Generate word cloud
+        function generateWordCloud() {
+            const container = document.getElementById('wordCloud');
+            
+            if (messages.length === 0) {
+                container.innerHTML = '<p style="color: #999;">還沒有留言，快來發表第一則留言吧！</p>';
+                return;
+            }
+
+            const keywords = extractKeywords();
+            const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff'];
+            
+            container.innerHTML = Object.entries(keywords)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 20)
+                .map(([word, count]) => {
+                    const size = Math.min(Math.max(count * 0.8 + 0.8, 0.8), 2.5);
+                    const color = colors[Math.floor(Math.random() * colors.length)];
+                    return `<span class="word" style="font-size: ${size}rem; background-color: ${color}; color: white;">${word} (${count})</span>`;
+                }).join('');
+        }
+
+        // Generate keyword list
+        function generateKeywordList() {
+            const container = document.getElementById('keywordList');
+            const keywords = extractKeywords();
+            
+            if (Object.keys(keywords).length === 0) {
+                container.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">還沒有關鍵字</p>';
+                return;
+            }
+
+            container.innerHTML = Object.entries(keywords)
+                .sort((a, b) => b[1] - a[1])
+                .map(([word, count]) => `
+                    <div class="keyword-item">
+                        <span>${word}</span>
+                        <span class="keyword-count">${count}</span>
+                    </div>
+                `).join('');
+        }
+
+        // Extract keywords
+        function extractKeywords() {
+            const keywords = {};
+            const allText = messages.map(m => m.content).join(' ');
+            
+            const chars = allText.split('');
+            const words = [];
+            
+            for (let i = 0; i < chars.length - 1; i++) {
+                for (let len = 2; len <= 4 && i + len <= chars.length; len++) {
+                    const word = chars.slice(i, i + len).join('');
+                    if (!/[\s\d\.,!?;:"'()[\]{}]/.test(word) && word.length >= 2) {
+                        words.push(word);
+                    }
+                }
+            }
+            
+            words.forEach(word => {
+                keywords[word] = (keywords[word] || 0) + 1;
+            });
+            
+            Object.keys(keywords).forEach(word => {
+                if (keywords[word] < 2) {
+                    delete keywords[word];
+                }
+            });
+            
+            return keywords;
+        }
+
+        // Format time
+        function formatTime(date) {
+            return date.toLocaleString('zh-TW', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateConnectionStatus('connecting', '🔄 連接中...');
+            initFirebase();
+        });
+    </script>
+</body>
+</html>
