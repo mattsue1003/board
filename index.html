@@ -1,7 +1,4 @@
-<div class="stat-card">
-                        <div class="stat-number" id="totalReplies">0</div>
-                        <div class="stat-label">總回覆數</div>
-                    </div><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
@@ -210,8 +207,6 @@
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
         }
 
-
-
         .messages-container {
             grid-column: 1 / -1;
             margin-top: 20px;
@@ -397,29 +392,6 @@
             margin-top: 5px;
         }
 
-
-
-        .setup-instructions {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            border-radius: 10px;
-            padding: 20px;
-            margin: 20px;
-            color: #856404;
-        }
-
-        .setup-instructions h3 {
-            color: #856404;
-            margin-bottom: 15px;
-        }
-
-        .setup-instructions code {
-            background: #f8f9fa;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: monospace;
-        }
-
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
@@ -479,7 +451,7 @@
             </div>
             <div class="current-theme" id="currentTheme">目前主題：一般討論</div>
             <div style="margin-top: 15px; font-size: 0.9rem; opacity: 0.8;">
-                💬 多主題討論 • 📱 本地模式 (僅此瀏覽器可見) • ⚡ 即時更新
+                💬 多主題討論 • 📱 多人即時同步 • ⚡ Firebase 雲端儲存
             </div>
         </div>
 
@@ -514,6 +486,10 @@
                         <div class="stat-number" id="totalLikes">0</div>
                         <div class="stat-label">總愛心數</div>
                     </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalReplies">0</div>
+                        <div class="stat-label">總回覆數</div>
+                    </div>
                 </div>
                 
                 <div style="margin-top: 20px; padding: 15px; background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
@@ -543,18 +519,94 @@
         </div>
     </div>
 
-    <script>
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCC-hrQzsFHNI20omQOxVtckJzdmJV_7Fo",
+            authDomain: "matt-e0d2a.firebaseapp.com",
+            projectId: "matt-e0d2a",
+            storageBucket: "matt-e0d2a.firebasestorage.app",
+            messagingSenderId: "913370952002",
+            appId: "1:913370952002:web:f650c216eddc4da01218db",
+            measurementId: "G-F6W0SK1YB1"
+        };
+
         // Global variables
         let messages = [];
         let allThemes = ['一般討論'];
         let currentTheme = '一般討論';
         let searchTerm = '';
+        let db;
+        let app;
+        let isFirebaseConfigured = false;
 
-        // Initialize local mode
+        // Initialize Firebase
+        function initFirebase() {
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                isFirebaseConfigured = true;
+                
+                updateConnectionStatus('connected', '🟢 已連接');
+                
+                // 載入主題列表
+                loadThemes();
+                
+                // 監聽留言變化
+                const messagesQuery = query(collection(db, 'messages'), orderBy('timestamp', 'desc'));
+                onSnapshot(messagesQuery, (snapshot) => {
+                    const allMessages = [];
+                    snapshot.forEach((doc) => {
+                        const data = doc.data();
+                        allMessages.push({
+                            id: doc.id,
+                            ...data,
+                            timestamp: data.timestamp ? data.timestamp.toDate() : new Date(),
+                            likes: data.likes || 0,
+                            replies: data.replies || []
+                        });
+                    });
+                    
+                    messages = allMessages;
+                    updateDisplay();
+                }, (error) => {
+                    console.error('監聽留言失敗:', error);
+                    updateConnectionStatus('error', '❌ 連接失敗');
+                });
+
+                // 監聽主題列表變化
+                onSnapshot(collection(db, 'themes'), (snapshot) => {
+                    const themes = ['一般討論'];
+                    snapshot.forEach((doc) => {
+                        const theme = doc.data().name;
+                        if (!themes.includes(theme)) {
+                            themes.push(theme);
+                        }
+                    });
+                    allThemes = themes;
+                    updateThemeSelector();
+                }, (error) => {
+                    console.error('監聽主題失敗:', error);
+                });
+
+            } catch (error) {
+                console.error('Firebase初始化失敗:', error);
+                updateConnectionStatus('error', '❌ 初始化失敗');
+                initLocalMode();
+            }
+        }
+
+        // Local mode fallback
         function initLocalMode() {
+            isFirebaseConfigured = false;
             updateConnectionStatus('error', '📱 本地模式');
             updateDisplay();
-            showNotification('目前使用本地模式，留言僅在此瀏覽器中顯示', 'warning');
+            showNotification('Firebase 連接失敗，使用本地模式', 'warning');
         }
 
         // Update connection status
@@ -565,7 +617,7 @@
         }
 
         // Create new theme
-        window.createTheme = function() {
+        window.createTheme = async function() {
             const input = document.getElementById('themeInput');
             const theme = input.value.trim();
             if (!theme) return;
@@ -576,10 +628,27 @@
                 return;
             }
 
-            allThemes.push(theme);
-            updateThemeSelector();
-            showNotification('主題已建立（本地模式）', 'success');
-            input.value = '';
+            if (isFirebaseConfigured) {
+                try {
+                    await addDoc(collection(db, 'themes'), { 
+                        name: theme, 
+                        createdAt: serverTimestamp()
+                    });
+                    showNotification('主題建立成功！', 'success');
+                    input.value = '';
+                } catch (error) {
+                    console.error('建立主題失敗:', error);
+                    showNotification('建立主題失敗，請稍後重試', 'error');
+                }
+            } else {
+                // Local mode
+                if (!allThemes.includes(theme)) {
+                    allThemes.push(theme);
+                    updateThemeSelector();
+                    showNotification('主題已建立（本地模式）', 'warning');
+                }
+                input.value = '';
+            }
         };
 
         // Switch theme
@@ -604,31 +673,74 @@
             ).join('');
         }
 
+        // Load themes
+        async function loadThemes() {
+            if (!isFirebaseConfigured) return;
+            
+            try {
+                onSnapshot(collection(db, 'themes'), (snapshot) => {
+                    const themes = ['一般討論'];
+                    snapshot.forEach((doc) => {
+                        const theme = doc.data().name;
+                        if (!themes.includes(theme)) {
+                            themes.push(theme);
+                        }
+                    });
+                    allThemes = themes;
+                    updateThemeSelector();
+                });
+            } catch (error) {
+                console.error('載入主題列表失敗:', error);
+            }
+        }
+
         // Search messages
         window.searchMessages = function() {
             searchTerm = document.getElementById('searchInput').value.trim().toLowerCase();
             updateDisplay();
         };
 
-        // Like message function (修正版本)
-        window.likeMessage = function(messageId, event) {
+        // Like message function
+        window.likeMessage = async function(messageId, event) {
             if (event) {
                 event.preventDefault();
                 event.stopPropagation();
             }
             
-            const messageIndex = messages.findIndex(msg => msg.id == messageId);
-            if (messageIndex !== -1) {
-                messages[messageIndex].likes = (messages[messageIndex].likes || 0) + 1;
-                updateDisplay();
-                
-                // 顯示愛心動畫
-                const button = event ? event.target.closest('button') : null;
-                if (button) {
-                    showLikeAnimation(button);
+            if (isFirebaseConfigured) {
+                try {
+                    const messageRef = doc(db, 'messages', messageId);
+                    const message = messages.find(msg => msg.id === messageId);
+                    if (message) {
+                        const currentLikes = message.likes || 0;
+                        await updateDoc(messageRef, { likes: currentLikes + 1 });
+                        
+                        // 顯示愛心動畫
+                        const button = event ? event.target.closest('button') : null;
+                        if (button) {
+                            showLikeAnimation(button);
+                        }
+                        
+                        showNotification('已按讚！', 'success');
+                    }
+                } catch (error) {
+                    console.error('按愛心失敗:', error);
+                    showNotification('按愛心失敗，請稍後重試', 'error');
                 }
-                
-                showNotification('已按讚！', 'success');
+            } else {
+                // Local mode
+                const messageIndex = messages.findIndex(msg => msg.id == messageId);
+                if (messageIndex !== -1) {
+                    messages[messageIndex].likes = (messages[messageIndex].likes || 0) + 1;
+                    updateDisplay();
+                    
+                    const button = event ? event.target.closest('button') : null;
+                    if (button) {
+                        showLikeAnimation(button);
+                    }
+                    
+                    showNotification('已按讚！', 'success');
+                }
             }
         };
 
@@ -645,7 +757,7 @@
         };
 
         // Add reply to message
-        window.addReply = function(messageId) {
+        window.addReply = async function(messageId) {
             const textarea = document.querySelector(`#reply-${messageId} textarea`);
             const authorInput = document.querySelector(`#reply-${messageId} input[type="text"]`);
             
@@ -659,31 +771,51 @@
                 return;
             }
 
-            const messageIndex = messages.findIndex(msg => msg.id == messageId);
-            if (messageIndex !== -1) {
-                if (!messages[messageIndex].replies) {
-                    messages[messageIndex].replies = [];
+            const reply = {
+                id: Date.now(),
+                author: replyAuthor,
+                content: replyContent,
+                timestamp: new Date()
+            };
+
+            if (isFirebaseConfigured) {
+                try {
+                    const messageRef = doc(db, 'messages', messageId);
+                    const message = messages.find(msg => msg.id === messageId);
+                    if (message) {
+                        const currentReplies = message.replies || [];
+                        await updateDoc(messageRef, { 
+                            replies: [...currentReplies, {
+                                ...reply,
+                                timestamp: serverTimestamp()
+                            }]
+                        });
+                        
+                        showNotification('回覆已發表！', 'success');
+                    }
+                } catch (error) {
+                    console.error('發表回覆失敗:', error);
+                    showNotification('發表回覆失敗，請稍後重試', 'error');
                 }
-                
-                const reply = {
-                    id: Date.now(),
-                    author: replyAuthor,
-                    content: replyContent,
-                    timestamp: new Date()
-                };
-                
-                messages[messageIndex].replies.push(reply);
-                
-                // 清空回覆表單
-                textarea.value = '';
-                if (authorInput) authorInput.value = '';
-                
-                // 隱藏回覆表單
-                document.getElementById(`reply-${messageId}`).classList.remove('active');
-                
-                updateDisplay();
-                showNotification('回覆已發表！', 'success');
+            } else {
+                // Local mode
+                const messageIndex = messages.findIndex(msg => msg.id == messageId);
+                if (messageIndex !== -1) {
+                    if (!messages[messageIndex].replies) {
+                        messages[messageIndex].replies = [];
+                    }
+                    messages[messageIndex].replies.push(reply);
+                    updateDisplay();
+                    showNotification('回覆已發表（本地模式）！', 'success');
+                }
             }
+            
+            // 清空回覆表單
+            textarea.value = '';
+            if (authorInput) authorInput.value = '';
+            
+            // 隱藏回覆表單
+            document.getElementById(`reply-${messageId}`).classList.remove('active');
         };
 
         // Show like animation
@@ -712,7 +844,7 @@
         }
 
         // Add message
-        window.addMessage = function(event) {
+        window.addMessage = async function(event) {
             event.preventDefault();
             
             const authorName = document.getElementById('authorName').value.trim() || '匿名';
@@ -725,24 +857,38 @@
             submitBtn.textContent = '發送中...';
 
             const message = {
-                id: Date.now(),
                 author: authorName,
                 content: messageText,
-                timestamp: new Date(),
+                timestamp: isFirebaseConfigured ? serverTimestamp() : new Date(),
                 theme: currentTheme,
-                likes: 0
+                likes: 0,
+                replies: []
             };
 
-            messages.unshift(message);
-            updateDisplay();
-            showNotification('留言已儲存（本地模式）', 'success');
+            try {
+                if (isFirebaseConfigured) {
+                    await addDoc(collection(db, 'messages'), message);
+                    showNotification('留言發送成功！', 'success');
+                } else {
+                    // Local mode
+                    message.id = Date.now();
+                    message.timestamp = new Date();
+                    messages.unshift(message);
+                    updateDisplay();
+                    showNotification('留言已儲存（本地模式）', 'warning');
+                }
 
-            // 清空表單
-            document.getElementById('authorName').value = '';
-            document.getElementById('messageText').value = '';
-            
-            submitBtn.disabled = false;
-            submitBtn.textContent = '📝 發送留言';
+                // 清空表單
+                document.getElementById('authorName').value = '';
+                document.getElementById('messageText').value = '';
+                
+            } catch (error) {
+                console.error('發送留言失敗:', error);
+                showNotification('發送失敗，請稍後重試', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '📝 發送留言';
+            }
         };
 
         // Show notification
@@ -784,7 +930,7 @@
             document.getElementById('themeTitle').textContent = currentTheme;
         }
 
-        // Update messages list (filtered by current theme and search)
+        // Update messages list
         function updateMessagesList() {
             const container = document.getElementById('messagesList');
             
@@ -817,7 +963,7 @@
                         <div class="reply-item">
                             <div class="reply-header">
                                 <span class="reply-author">${reply.author}</span>
-                                <span class="reply-time">${formatTime(reply.timestamp)}</span>
+                                <span class="reply-time">${formatTime(reply.timestamp instanceof Date ? reply.timestamp : reply.timestamp.toDate())}</span>
                             </div>
                             <div class="reply-content">${reply.content}</div>
                         </div>
@@ -891,7 +1037,7 @@
             }).join('');
         }
 
-        // Update stats (filtered by current theme and search)
+        // Update stats
         function updateStats() {
             let themeMessages = messages.filter(msg => msg.theme === currentTheme);
             
@@ -930,11 +1076,13 @@
             document.getElementById('totalReplies').textContent = totalReplies;
         }
 
-
-
         // Format time
         function formatTime(date) {
-            return date.toLocaleString('zh-TW', {
+            if (!date) return '剛剛';
+            
+            const validDate = date instanceof Date ? date : (date.toDate ? date.toDate() : new Date(date));
+            
+            return validDate.toLocaleString('zh-TW', {
                 year: 'numeric',
                 month: '2-digit',
                 day: '2-digit',
@@ -945,11 +1093,10 @@
 
         // Initialize on load
         document.addEventListener('DOMContentLoaded', function() {
-            updateConnectionStatus('connecting', '🔄 初始化中...');
-            setTimeout(() => {
-                initLocalMode();
-            }, 1000);
+            updateConnectionStatus('connecting', '🔄 連接中...');
+            initFirebase();
         });
     </script>
 </body>
 </html>
+            submitBtn.
