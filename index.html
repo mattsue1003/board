@@ -944,7 +944,7 @@
             generateKeywordList();
         };
 
-        // Generate word cloud (improved with meaningful complete words)
+        // Generate word cloud (only meaningful terms)
         function generateWordCloud() {
             const container = document.getElementById('wordCloud');
             
@@ -960,7 +960,7 @@
             const keywordEntries = Object.entries(keywords);
             
             if (keywordEntries.length === 0) {
-                container.innerHTML = `<p style="color: #999;">「${currentTheme}」主題的內容還在分析中...</p>`;
+                container.innerHTML = `<p style="color: #999;">還沒有發現有意義的關鍵詞<br><small>試試發表包含專業術語或具體內容的留言</small></p>`;
                 return;
             }
 
@@ -970,16 +970,15 @@
                 '#00d2d3', '#1dd1a1', '#fd79a8', '#fdcb6e'
             ];
             
-            // 只顯示前12個最重要的關鍵字
+            // 只顯示前8個最重要的關鍵字
             container.innerHTML = keywordEntries
                 .sort((a, b) => b[1] - a[1])
-                .slice(0, 12)
+                .slice(0, 8)
                 .map(([word, count], index) => {
-                    // 更合理的字體大小計算
-                    const maxCount = Math.max(...keywordEntries.map(([, c]) => c));
-                    const baseSize = 1.0;
-                    const sizeMultiplier = Math.min(count / maxCount * 1.5, 1.8);
-                    const size = baseSize + sizeMultiplier;
+                    // 字體大小根據詞彙重要性調整
+                    const baseSize = 1.2;
+                    const sizeBoost = count > 1 ? 0.4 : 0;
+                    const size = baseSize + sizeBoost;
                     
                     const color = colors[index % colors.length];
                     
@@ -987,59 +986,50 @@
                         font-size: ${size}rem; 
                         background: linear-gradient(45deg, ${color}, ${color}dd); 
                         color: white;
-                        margin: 6px;
-                        padding: 8px 14px;
+                        margin: 8px;
+                        padding: 10px 16px;
                         display: inline-block;
-                        border-radius: 20px;
-                        box-shadow: 0 3px 10px rgba(0,0,0,0.15);
-                        font-weight: ${count >= 3 ? 'bold' : '500'};
-                    ">${word} <small style="opacity: 0.9; font-size: 0.7em;">${count}</small></span>`;
+                        border-radius: 25px;
+                        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                        font-weight: 600;
+                        transition: transform 0.3s ease;
+                    " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">${word} <small style="opacity: 0.9; font-size: 0.75em;">${count}</small></span>`;
                 }).join('');
         }
 
-        // Generate keyword list (improved with meaningful words only)
+        // Generate keyword list (only meaningful terms)
         function generateKeywordList() {
             const container = document.getElementById('keywordList');
             const keywords = extractKeywords();
             
             if (Object.keys(keywords).length === 0) {
-                container.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">還沒有關鍵字資料</p>';
+                container.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">還沒有發現有意義的關鍵詞<br><small style="font-size: 0.8rem;">試試發表包含專業術語或具體內容的留言</small></p>';
                 return;
             }
 
             const sortedKeywords = Object.entries(keywords)
                 .sort((a, b) => b[1] - a[1])
-                .slice(0, 15); // 限制顯示數量
+                .slice(0, 10); // 限制顯示數量
             
-            // 簡化分類，只按詞頻分組
-            const categories = {
-                '熱門詞彙': sortedKeywords.filter(([word, count]) => count >= 3),
-                '常用詞彙': sortedKeywords.filter(([word, count]) => count === 2),
-                '相關詞彙': sortedKeywords.filter(([word, count]) => count === 1)
-            };
-
-            let html = '';
+            let html = '<div style="margin-bottom: 15px;"><h4 style="color: #4ecdc4; margin-bottom: 10px; font-size: 1rem;">發現的關鍵詞彙</h4>';
             
-            Object.entries(categories).forEach(([categoryName, words]) => {
-                if (words.length > 0) {
-                    html += `
-                        <div style="margin-bottom: 15px;">
-                            <h4 style="color: #4ecdc4; margin-bottom: 8px; font-size: 0.9rem;">${categoryName}</h4>
-                            ${words.slice(0, 8).map(([word, count]) => `
-                                <div class="keyword-item" style="margin-bottom: 8px;">
-                                    <span style="font-weight: ${count >= 3 ? 'bold' : 'normal'};">${word}</span>
-                                    <span class="keyword-count" style="background: ${count >= 3 ? '#ff6b6b' : count === 2 ? '#feca57' : '#96ceb4'};">${count}</span>
-                                </div>
-                            `).join('')}
-                        </div>
-                    `;
-                }
+            sortedKeywords.forEach(([word, count]) => {
+                const importance = count >= 3 ? 'high' : count >= 2 ? 'medium' : 'low';
+                const bgColor = count >= 3 ? '#ff6b6b' : count >= 2 ? '#feca57' : '#96ceb4';
+                
+                html += `
+                    <div class="keyword-item" style="margin-bottom: 8px; border-left: 4px solid ${bgColor};">
+                        <span style="font-weight: ${count >= 2 ? 'bold' : 'normal'};">${word}</span>
+                        <span class="keyword-count" style="background: ${bgColor};">${count}</span>
+                    </div>
+                `;
             });
-
-            container.innerHTML = html || '<p style="color: #999; text-align: center; padding: 20px;">還沒有關鍵字</p>';
+            
+            html += '</div>';
+            container.innerHTML = html;
         }
 
-        // Extract keywords (improved to show meaningful complete words only)
+        // Extract keywords (completely redesigned for meaningful content only)
         function extractKeywords() {
             const keywords = {};
             // 只分析當前主題的留言
@@ -1049,71 +1039,83 @@
             
             const allText = themeMessages.map(m => m.content).join(' ');
             
-            // 定義有意義的關鍵詞模式（完整詞彙）
-            const meaningfulWords = [
-                // 職能治療專業術語
-                '職能治療', '物理治療', '語言治療', '復健科', '復健', '評估', '訓練', '治療', '療育',
-                '認知訓練', '感覺統合', '動作訓練', '功能訓練', '日常生活', '生活自理', '自理能力',
-                '精細動作', '粗大動作', '手眼協調', '平衡訓練', '姿勢矯正', '肌力訓練',
-                '輔具評估', '輔具', '無障礙', '環境改造', '適應', '獨立', '協助', '支持',
-                '發展遲緩', '自閉症', '注意力', '專注力', '記憶力', '學習', '認知',
-                '中風', '腦傷', '脊髓損傷', '帕金森', '失智症', '憂鬱症',
-                '兒童', '成人', '長者', '老人', '家屬', '照顧者', '患者', '個案',
-                // 一般詞彙
-                '問題', '困難', '挑戰', '目標', '計畫', '方法', '技巧', '策略',
-                '進步', '改善', '效果', '成果', '成功', '失敗', '經驗', '學習',
-                '分享', '討論', '交流', '意見', '建議', '想法', '看法', '心得',
-                '重要', '有用', '有效', '困難', '容易', '簡單', '複雜',
-                '醫院', '診所', '學校', '機構', '中心', '家庭', '社區'
+            // 第一步：提取預定義的有意義詞彙
+            const meaningfulTerms = [
+                // 職能治療專業詞彙
+                '職能治療師', '職能治療', '物理治療', '語言治療', '心理治療',
+                '復健科', '復健治療', '復健', '評估', '訓練', '治療', '療育', '諮詢',
+                
+                // 功能與技能
+                '認知功能', '認知訓練', '認知', '感覺統合', '感覺', '動作訓練', '動作',
+                '精細動作', '粗大動作', '手眼協調', '平衡', '肌力', '肌耐力',
+                '日常生活', '生活自理', '自理能力', '獨立性', '功能性',
+                
+                // 輔具與環境
+                '輔具評估', '輔具', '無障礙', '環境改造', '適應', '協助', '支持',
+                
+                // 對象群體
+                '發展遲緩', '自閉症', '注意力不足', '過動症', '學習障礙',
+                '中風', '腦傷', '脊髓損傷', '帕金森氏症', '失智症', '憂鬱症',
+                '兒童', '青少年', '成人', '老人', '長者', '患者', '個案', '案主',
+                '家屬', '照顧者', '家庭', '父母',
+                
+                // 場所與機構
+                '醫院', '診所', '復健科', '早療中心', '日照中心', '學校', '特教班',
+                '社區', '居家', '機構',
+                
+                // 專業概念
+                '評估工具', '介入', '計畫', '目標', '策略', '方法', '技巧',
+                '進步', '改善', '維持', '預防', '促進', '發展',
+                '困難', '問題', '挑戰', '障礙', '限制',
+                '成功', '效果', '成果', '經驗', '學習',
+                
+                // 情感與交流
+                '分享', '討論', '交流', '溝通', '意見', '建議', '想法', '心得',
+                '感謝', '支持', '鼓勵', '理解', '同理',
+                
+                // 常見形容詞
+                '重要', '有效', '有用', '困難', '容易', '複雜', '簡單',
+                '專業', '創新', '實用', '合適', '適當'
             ];
             
-            // 1. 優先匹配完整的有意義詞彙
-            meaningfulWords.forEach(word => {
-                const regex = new RegExp(word, 'g');
+            // 檢查每個預定義詞彙是否出現在文本中
+            meaningfulTerms.forEach(term => {
+                const regex = new RegExp(term, 'gi');
                 const matches = allText.match(regex);
                 if (matches && matches.length > 0) {
-                    keywords[word] = matches.length;
+                    keywords[term] = matches.length;
                 }
             });
             
-            // 2. 如果關鍵字太少，補充一些2-3字的詞組（但要過濾掉重複的部分詞）
-            if (Object.keys(keywords).length < 5) {
-                const chars = allText.replace(/[^\u4e00-\u9fa5]/g, ''); // 只保留中文
-                const usedWords = new Set(Object.keys(keywords));
+            // 第二步：如果關鍵字太少，提取動詞和名詞（排除無意義的片段）
+            if (Object.keys(keywords).length < 3) {
+                // 定義一些常見的動詞和名詞模式
+                const verbNounPatterns = [
+                    /需要/g, /想要/g, /希望/g, /喜歡/g, /認為/g, /覺得/g, /發現/g,
+                    /使用/g, /運用/g, /操作/g, /練習/g, /訓練/g, /學習/g, /教導/g,
+                    /幫助/g, /協助/g, /改善/g, /提升/g, /增進/g, /促進/g, /維持/g,
+                    /解決/g, /處理/g, /面對/g, /克服/g, /達成/g, /完成/g,
+                    /健康/g, /安全/g, /舒適/g, /便利/g, /效率/g, /品質/g,
+                    /工作/g, /活動/g, /課程/g, /計畫/g, /服務/g, /資源/g
+                ];
                 
-                for (let i = 0; i < chars.length - 1; i++) {
-                    for (let len = 2; len <= 3; len++) {
-                        if (i + len <= chars.length) {
-                            const word = chars.substr(i, len);
-                            
-                            // 檢查是否已經被更長的詞包含
-                            const isPartOfLongerWord = [...usedWords].some(usedWord => 
-                                usedWord.includes(word) && usedWord !== word
-                            );
-                            
-                            if (!isPartOfLongerWord && 
-                                word.length >= 2 && 
-                                !/^(.)\1+$/.test(word) && // 不是重複字符
-                                !/[的了在是有和與及]/.test(word)) { // 排除常見虛詞
-                                
-                                keywords[word] = (keywords[word] || 0) + 1;
-                            }
-                        }
+                verbNounPatterns.forEach(pattern => {
+                    const matches = allText.match(pattern);
+                    if (matches && matches.length > 0) {
+                        const word = matches[0];
+                        keywords[word] = matches.length;
                     }
-                }
+                });
             }
             
-            // 3. 過濾低頻詞和部分詞
+            // 第三步：過濾掉無意義的短詞和人稱代詞
+            const meaninglessWords = ['今天', '昨天', '明天', '現在', '之前', '之後', '這個', '那個', '什麼', '怎麼', '為什麼', '可以', '不能', '沒有', '還是', '或是', '如果', '因為', '所以', '但是', '然後', '我', '你', '他', '她', '我們', '你們', '他們', '的話', '一下', '一些', '很多', '非常', '真的', '就是', '這樣', '那樣'];
+            
             const filteredKeywords = {};
             Object.entries(keywords).forEach(([word, count]) => {
-                // 檢查是否被其他更長的詞包含
-                const isPartOfOther = Object.keys(keywords).some(otherWord => 
-                    otherWord !== word && 
-                    otherWord.includes(word) && 
-                    keywords[otherWord] >= count
-                );
-                
-                if (!isPartOfOther && count >= 1) {
+                if (!meaninglessWords.includes(word) && 
+                    word.length >= 2 && 
+                    count >= 1) {
                     filteredKeywords[word] = count;
                 }
             });
